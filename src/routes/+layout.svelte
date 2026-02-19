@@ -1,7 +1,11 @@
 <script lang="ts">
 	import '../app.css';
+	import '$lib/themes/default.css';
+
 	import favicon from '$lib/assets/favicon.svg';
 	import { page } from '$app/state';
+	import ModeToggle from '$lib/components/ModeToggle.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	let { children } = $props();
 
@@ -41,6 +45,8 @@
 				</ul>
 			</div>
 		</nav>
+		<ModeToggle/>
+		<ThemeToggle/>
 	</header>
 
 	<main>

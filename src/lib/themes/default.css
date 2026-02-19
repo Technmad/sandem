@@ -1,5 +1,6 @@
-/* --- Light Mode (Default) --- */
-:root[data-theme='light'] {
+/* --- Default Theme --- */
+/* Target both the theme name AND the light mode */
+:root[data-theme='default'][data-mode='light'] {
 	--bg: hsl(0 0% 85%);
 	--mg: hsl(0 0% 90%);
 	--fg: hsl(0 0% 95%);
@@ -11,8 +12,8 @@
 	--shadow: 0px 2px 2px hsla(0, 0%, 0%, 0.15);
 }
 
-/* --- Dark Mode Overrides --- */
-:root[data-theme='dark'] {
+/* Target both the theme name AND the dark mode */
+:root[data-theme='default'][data-mode='dark'] {
 	--bg: hsl(0 0% 0%);
 	--mg: hsl(0 0% 5%);
 	--fg: hsl(0 0% 10%);
