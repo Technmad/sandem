@@ -20,8 +20,9 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
 
 		advanced: {
 			defaultCookieAttributes: {
-				sameSite: 'none',
-				secure: true
+				sameSite: "none",
+				secure: true,
+				partitioned: true
 			}
 		},
 
