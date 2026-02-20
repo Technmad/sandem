@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 
 	let currentTheme = $state('default');
-	const themes = ['default', 'forest', 'solar'];
+	const themes = ['default', 'forest', 'solar', 'ocean'];
 
 	onMount(() => {
 		const savedTheme = localStorage.getItem('theme');

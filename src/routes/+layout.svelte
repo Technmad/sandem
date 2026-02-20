@@ -1,20 +1,19 @@
 <script lang="ts">
 	import '../app.css';
-	import '$lib/themes/default.css';
 
 	import favicon from '$lib/assets/favicon.svg';
 	import { page } from '$app/state';
 	import ModeToggle from '$lib/components/ModeToggle.svelte';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	let { children } = $props();
 
-	const navLinks = [
-		{ path: '/', label: 'Home' },
-		{ path: '/dev', label: 'Dev' },
-		{ path: '/test/ssr', label: 'SSR Test' },
-		{ path: '/test/client-only', label: 'Client Test' },
-		{ path: '/test/queries', label: 'Queries Test' }
+	const pages = [
+		{ path: '/', label: 'home' },
+		{ path: '/code', label: 'code' },
+		{ path: '/dev', label: 'dev' },
+		{ path: '/test/ssr', label: 'ssr' },
+		{ path: '/test/client-only', label: 'client' },
+		{ path: '/test/queries', label: 'queries' }
 	];
 </script>
 
@@ -22,34 +21,65 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50">
-	<header class="sticky top-0 z-10 border-b border-gray-200 bg-white">
-		<nav class="mx-auto max-w-4xl px-4 py-3">
-			<div class="flex items-center justify-between">
-				<a href="/" class="font-semibold text-gray-900 hover:text-gray-700">
-					convex-better-auth-svelte
-				</a>
-				<ul class="flex items-center gap-1 text-sm">
-					{#each navLinks as link}
-						<li>
-							<a
-								href={link.path}
-								class="rounded-md px-3 py-1.5 transition-colors {page.url.pathname === link.path
-									? 'bg-gray-100 font-medium text-gray-900'
-									: 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}"
-							>
-								{link.label}
-							</a>
-						</li>
-					{/each}
-				</ul>
-			</div>
-		</nav>
-		<ModeToggle/>
-		<ThemeToggle/>
-	</header>
+{#snippet navigation(link: { path:string; label:string})}
+	<li>
+		<a href={link.path} class=" {page.url.pathname === link.path ? 'on_it' : 'not_on'}">
+			<span>{link.label}</span>
+		</a>
+	</li>
+{/snippet}
 
-	<main>
-		{@render children()}
-	</main>
-</div>
+<!-- html -->
+
+<header>
+	<nav>
+		<ul>
+			{#each pages as link}
+				{@render navigation(link)}
+			{/each}
+		</ul>
+	</nav>
+	<div class="button-group" role="group" aria-label="User Button Group">
+		<ModeToggle />
+	</div>
+</header>
+
+<main>
+	{@render children()}
+</main>
+
+<!-- /html -->
+
+<style>
+	header {
+		display: grid;
+		grid-template-columns: auto 4rem;
+	}
+	nav,
+	.button-group {
+		display: inline-block;
+		height: 4rem;
+		width: 100%;
+	}
+	ul {
+		display: grid;
+		grid-template-columns: repeat(6, 8rem);
+		height: 4rem;
+
+		background: var(--fg);
+	}
+	li {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	.on_it {
+		color: var(--accent);
+		font-weight: bold;
+	}
+	
+	.not_on {
+		color: var(--text);
+		opacity: 0.7;
+	}
+</style>

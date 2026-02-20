@@ -38,7 +38,13 @@
 	}
 	:global([data-button-root][data-variant='pop']):hover {
 		background: var(--highlight);
-		color: black;
+	}
+
+	:global([data-button-root][data-variant='push']) {
+		background: var(--fg);
+	}
+	:global([data-button-root][data-variant='push']:hover) {
+		background: var(--mg);
 	}
 
 	:global([data-button-root][data-variant='outline']) {
@@ -47,13 +53,6 @@
 	:global([data-button-root][data-variant='outline']:hover) {
 		background: var(--bg);
 		color: var(--muted);
-	}
-
-	:global([data-button-root][data-variant='push']) {
-		background: var(--fg);
-	}
-	:global([data-button-root][data-variant='push']:hover) {
-		background: var(--mg);
 	}
 
 	:global([data-button-root][data-variant='ghost']) {
