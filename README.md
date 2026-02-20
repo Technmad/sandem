@@ -5,6 +5,15 @@
 
 Version: 0.5.2
 
+## Quick summary ✅
+
+- Frontend: SvelteKit (Svelte v5) + Vite
+- Backend: Convex serverless functions (folder: `src/convex`)
+- Auth: `better-auth` + `@mmailaender/convex-better-auth-svelte`
+- Tests: Vitest (unit) and Playwright (E2E)
+
+This repo is ideal as a reference implementation for SSR + client auth with Convex and for running end-to-end auth tests.
+
 A hands‑on starter kit showing how to build a SvelteKit app with authenticated
 routes and real‑time collaboration. Nothing flashy – just a bunch of working
 examples you can copy, tweak and learn from.
@@ -34,7 +43,7 @@ understand how things fit.
   uses Svelte 5’s “rune” syntax (`$state`, `$derived`, etc.). There are global
   styles in `src/app.css`, and most components just arrange markup and accept
   props from layouts.
-- **Authentication** is handled by Better Auth. The client is configured in
+- **Authentication** is handled by Better Auth (with the `@mmailaender/convex-better-auth-svelte` integration). The client is configured in
   `src/lib/auth-client.ts` and wired into the app via the helper in
   `src/lib/svelte/client.svelte.ts`. Server routes under
   `src/routes/api/auth` simply forward to the Better Auth handler so you don’t
