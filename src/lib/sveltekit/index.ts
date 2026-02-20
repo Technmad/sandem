@@ -102,13 +102,32 @@ const handler = (request: Request, opts?: { convexSiteUrl?: string }) => {
 	}
 
 	const nextUrl = `${convexSiteUrl}${requestUrl.pathname}${requestUrl.search}`;
-	const newRequest = new Request(nextUrl, request);
-	newRequest.headers.set('host', new URL(nextUrl).host);
-	newRequest.headers.set('accept-encoding', 'application/json');
 
-	return fetch(newRequest, { method: request.method, redirect: 'manual' });
+	// 1. Create a fresh set of headers from the incoming request
+	const headers = new Headers(request.headers);
+
+	// 2. CRITICAL: Delete the old host/connection headers!
+	// This stops Node's 'undici' fetch from crashing across domains.
+	headers.delete('host');
+	headers.delete('connection');
+	headers.set('accept-encoding', 'application/json');
+
+	// 3. Build clean fetch options
+	const fetchOptions: RequestInit & { duplex?: string } = {
+		method: request.method,
+		headers,
+		redirect: 'manual'
+	};
+
+	// 4. Attach the body only for POST/PUT requests
+	if (request.method !== 'GET' && request.method !== 'HEAD') {
+		fetchOptions.body = request.body;
+		// Required by Node 18+ when forwarding a ReadableStream body
+		fetchOptions.duplex = 'half';
+	}
+
+	return fetch(nextUrl, fetchOptions);
 };
-
 export const createSvelteKitHandler = (opts?: { convexSiteUrl?: string }) => {
 	const requestHandler: RequestHandler = async ({ request }) => {
 		return handler(request, opts);

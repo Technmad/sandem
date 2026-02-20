@@ -1,15 +1,15 @@
 // src/routes/api/liveblocks-webhook/+server.ts
 import { WebhookHandler } from '@liveblocks/node';
 import { ConvexHttpClient } from 'convex/browser';
-import { env } from '$env/dynamic/private';
-import { env as publicEnv } from '$env/dynamic/public';
+import { SECRET_LIVEBLOCKS_KEY } from '$env/static/private';
+import { PUBLIC_CONVEX_URL } from '$env/static/public';
 import { api } from '$convex/_generated/api.js';
 
 // Initialize Convex and Liveblocks Webhook verifyer
-const convex = new ConvexHttpClient(publicEnv.PUBLIC_CONVEX_URL);
-const webhookHandler = new WebhookHandler(env.LIVEBLOCKS_WEBHOOK_SECRET!); // Get this from Liveblocks dashboard
+const convex = new ConvexHttpClient(PUBLIC_CONVEX_URL);
 
 export async function POST({ request }) {
+	const webhookHandler = new WebhookHandler(SECRET_LIVEBLOCKS_KEY);
 	const body = await request.text();
 	const headers = request.headers;
 
@@ -32,7 +32,7 @@ export async function POST({ request }) {
 			// Note: 'codemirror' is the name you gave your Yjs text in Editor.svelte
 			const response = await fetch(`https://api.liveblocks.io/v2/rooms/${roomId}/ydoc/codemirror`, {
 				headers: {
-					Authorization: `Bearer ${env.LIVEBLOCKS_SECRET_KEY}`
+					Authorization: `Bearer ${SECRET_LIVEBLOCKS_KEY}`
 				}
 			});
 

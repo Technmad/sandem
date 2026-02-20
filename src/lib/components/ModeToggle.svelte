@@ -1,32 +1,32 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { Sun, Moon } from '@lucide/svelte';
-    import Button from '$lib/components/ui/Button.svelte';
+	import { onMount } from 'svelte';
+	import { Sun, Moon } from '@lucide/svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 
-    let mode = $state<'light' | 'dark'>();
+	let mode = $state<'light' | 'dark'>();
 
-    onMount(() => {
-        // Look for the saved mode, else use system preference
-        const savedMode = localStorage.getItem('mode') as 'light' | 'dark' | null;
-        mode =
-            savedMode ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    });
+	onMount(() => {
+		// Look for the saved mode, else use system preference
+		const savedMode = localStorage.getItem('mode') as 'light' | 'dark' | null;
+		mode =
+			savedMode ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+	});
 
-    $effect(() => {
-        // CHANGE: Bail out if mode hasn't been determined yet
-        if (!mode) return;
+	$effect(() => {
+		// CHANGE: Bail out if mode hasn't been determined yet
+		if (!mode) return;
 
-        const root = document.documentElement;
-        root.setAttribute('data-mode', mode);
-        root.classList.toggle('dark', mode === 'dark');
-        root.style.colorScheme = mode;
+		const root = document.documentElement;
+		root.setAttribute('data-mode', mode);
+		root.classList.toggle('dark', mode === 'dark');
+		root.style.colorScheme = mode;
 
-        localStorage.setItem('mode', mode);
-    });
+		localStorage.setItem('mode', mode);
+	});
 
-    function toggle() {
-        mode = mode === 'light' ? 'dark' : 'light';
-    }
+	function toggle() {
+		mode = mode === 'light' ? 'dark' : 'light';
+	}
 </script>
 
 <Button

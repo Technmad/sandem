@@ -10,9 +10,24 @@
 
 	let parent: HTMLElement;
 
-	// Set up Liveblocks client
+	// Set up Liveblocks client. The `authEndpoint` option accepts either a
+	// URL or an async function; using a function lets us explicitly supply
+	// `credentials: 'include'` so the JWT cookie reaches our server endpoint.
 	const client = createClient({
-		authEndpoint: '/api/liveblocks-auth'
+		authEndpoint: async (room?: string) => {
+			const res = await fetch('/api/liveblocks-auth', {
+				method: 'POST',
+				credentials: 'include', // forward cookies
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ room })
+			});
+			if (!res.ok) {
+				throw new Error(`Liveblocks auth failed (${res.status})`);
+			}
+			return res.json();
+		}
 	});
 
 	onMount(() => {
