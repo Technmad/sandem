@@ -11,7 +11,7 @@
 		"access": "public"
 	},
 	"scripts": {
-		"dev:client": "vite dev",
+		"dev:client": "vite dev --host",
 		"dev:server": "npx convex dev",
 		"dev": "concurrently --kill-others --prefix-colors red,yellow --names \"svelte,convex\" \"pnpm dev:client\" \"pnpm dev:server\"",
 		"build": "vite build && npm run prepack",

@@ -3,7 +3,8 @@
 </script>
 
 <section>
-	<header></header>
+	<header> ye raha header for the code page</header>
+	
 	<Editor />
 </section>
 
