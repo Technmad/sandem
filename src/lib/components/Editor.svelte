@@ -12,7 +12,7 @@
 
 	// Set up Liveblocks client
 	const client = createClient({
-		publicApiKey: '/api/liveblocks-auth'
+		authEndpoint: '/api/liveblocks-auth'
 	});
 
 	onMount(() => {
