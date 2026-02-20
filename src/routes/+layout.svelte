@@ -44,6 +44,8 @@
 	</div>
 </header>
 
+<hr />
+
 <main>
 	{@render children()}
 </main>
@@ -69,12 +71,7 @@
 		padding: 0 1rem;
 		gap: 1rem;
 
-		border: 1px solid var(--border);
-		box-shadow: var(--shadow);
-		border-radius: var(--radius);
 		cursor: pointer;
-
-		background: var(--mg);
 	}
 
 	.on_it {
@@ -87,5 +84,12 @@
 	.not_on {
 		color: var(--text);
 		opacity: 0.7;
+	}
+
+	main {
+		height: calc(100vh - 4rem);
+	}
+	hr {
+		display: none;
 	}
 </style>

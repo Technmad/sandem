@@ -1,104 +1,100 @@
-# Sandem — SvelteKit + Convex demo
+# Sandem
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)  
+[![SvelteKit](https://img.shields.io/badge/framework-SvelteKit-orange.svg)]
 
 Version: 0.5.1
 
-A small SvelteKit example/demonstrator that showcases Convex-based backend functions and integration with Better Auth for authentication (SSR + client-only flows). The repository contains example routes, tests (Vitest + Playwright), and helper utilities for working with Convex and Better Auth.
+A compact, opinionated example demonstrating SvelteKit + Convex with Better Auth (SSR + client flows). Includes examples, unit + E2E tests, and utilities so you can bootstrap auth-enabled SvelteKit apps backed by Convex.
 
 ---
 
-## Quick summary ✅
+## Table of contents
 
-- Frontend: SvelteKit (Svelte v5) + Vite
-- Backend: Convex serverless functions (folder: `src/convex`)
-- Auth: `better-auth` + `@mmailaender/convex-better-auth-svelte`
-- Tests: Vitest (unit) and Playwright (E2E)
-
-This repo is ideal as a reference implementation for SSR + client auth with Convex and for running end-to-end auth tests.
-
----
-
-## Features
-
-- Example authentication flows (sign up / sign in) using Better Auth + Convex
-- SSR-aware auth pages and client-only pages (`/test/ssr`, `/test/client-only`, `/test/queries`)
-- Convex schema + generated API in `src/convex/_generated`
-- E2E test support with Playwright and a helper script to create a test user
-- Developer-friendly tasks: linting, formatting, type-checking, and test runners
+- Quick start
+- Environment variables
+- Development & testing
+- Project layout
+- Deployment
+- Troubleshooting
+- Contributing & roadmap
 
 ---
 
-## Getting started (local development) 💡
+## Quick start
 
-### Prerequisites
+Requirements:
 
-- Node.js 18+ (recommended)
-- pnpm (preferred) or npm/yarn
-- Convex CLI (used automatically via `npx convex`)
+- Node.js 18+
+- pnpm (recommended) or npm/yarn
+- Convex CLI (used via `npx convex`)
 
-### Install
+Install and run locally:
 
 ```bash
 pnpm install
+pnpm dev           # starts frontend + convex (recommended)
+# or
+pnpm dev:frontend   # frontend only
+pnpm dev:backend    # convex backend only
 ```
 
-### Environment
+Create the E2E test user (uses `./.env.test`):
 
-Copy or create the following environment files in the project root:
+```bash
+pnpm run setup:test-user
+```
 
-- `./.env.local` — runtime/dev variables (site URL, Convex deployment, secret)
-- `./.env.test` — test user credentials for E2E tests
+Build & preview:
 
-Important variables (examples):
+```bash
+pnpm build
+pnpm preview
+```
+
+---
+
+## Environment variables
+
+Create `.env.local` for runtime/dev and `.env.test` for Playwright credentials.
+
+Example `.env.local`:
 
 ```env
-# .env.local (example)
-CONVEX_DEPLOYMENT=dev:pastel-cardinal-852
+SITE_URL=http://localhost:5173
 PUBLIC_CONVEX_URL=https://<your-convex>.convex.cloud
 PUBLIC_CONVEX_SITE_URL=https://<your-convex>.convex.site
-SITE_URL=http://localhost:5173
+CONVEX_DEPLOYMENT=dev:your-deployment
 BETTER_AUTH_SECRET=<random-base64-secret>
+```
 
-# .env.test (example)
+Example `.env.test`:
+
+```env
 TEST_USER_EMAIL=test@example.com
 TEST_USER_PASSWORD=TestPassword123!
 TEST_USER_NAME="Test User"
 SITE_URL=http://localhost:5173
 ```
 
-> Note: `SITE_URL` must match the `baseURL` set in `src/lib/auth-client.ts` (default: `http://localhost:5173`).
+Important: `SITE_URL` must match the `baseURL` in `src/lib/auth-client.ts` (default: `http://localhost:5173`).
 
-### Run (dev)
+---
 
-Starts both the frontend and Convex dev server (recommended):
+## Development & testing
 
-```bash
-pnpm dev
-```
+- Type-check and Svelte checks: `pnpm run check`
+- Format: `pnpm format`
+- Lint: `pnpm lint`
+- Unit tests (Vitest): `pnpm test`
+- E2E tests (Playwright):
+  - Install browsers: `pnpm run test:e2e:install-browsers`
+  - Run: `pnpm run test:e2e`
 
-Start frontend only:
+Notes:
 
-```bash
-pnpm dev:frontend
-```
-
-Start Convex backend only:
-
-```bash
-pnpm dev:backend
-# (runs `npx convex dev`)
-```
-
-### Setup test user (for Playwright E2E)
-
-1. Add credentials to `./.env.test` (see example above).
-2. Ensure dev server is running: `pnpm dev`.
-3. Run:
-
-```bash
-pnpm run setup:test-user
-```
-
-This hits the local sign-up endpoint and creates/verifies the test account.
+- `pnpm dev` runs both the SvelteKit dev server and the Convex dev server concurrently.
+- `scripts/setup-test-user.ts` creates a verified test user for Playwright flows.
 
 ---
 
@@ -116,25 +112,45 @@ This hits the local sign-up endpoint and creates/verifies the test account.
 
 ---
 
-## Project structure (high level) 🔧
+## Project layout (high level)
 
-- `src/` — SvelteKit app
-  - `routes/` — pages + examples (`/dev`, `/test/*`)
-  - `lib/` — shared utilities and components (e.g. `auth-client.ts`, UI components)
-- `src/convex/` — Convex functions, schema and config (server-side)
-- `scripts/` — handy scripts like `setup-test-user.ts`
-- `playwright.config.ts` — E2E config
-- `vitest.config.ts` — unit test config
+- `src/` — frontend app
+  - `lib/` — shared utilities & UI components (`auth-client.ts`, components)
+  - `routes/` — SvelteKit pages and examples
+- `src/convex/` — Convex server functions, schema and generated API
+- `e2e/` — Playwright end-to-end tests
+- `scripts/` — helper scripts (test user setup)
+- `playwright.config.ts`, `vitest.config.ts`
 
-Key files: `src/lib/auth-client.ts`, `src/convex/schema.ts`, `src/routes/test/*` (auth examples).
+Key files:
+
+- `src/lib/auth-client.ts` — baseURL and auth helper
+- `src/convex/schema.ts` — Convex schema
+- `src/convex/_generated/` — generated Convex API
+- `src/lib/components/Editor.svelte` — collaborative editor example (Liveblocks + Yjs)
 
 ---
 
-## Tests & CI 📋
+## Tests & CI
 
-- Unit: Vitest (`pnpm test`) — component + utility tests
-- E2E: Playwright (`pnpm run test:e2e`) — end-to-end flows (requires test user)
-- Add CI workflow to run `pnpm test` and `pnpm run test:e2e:install-browsers` + `pnpm run test:e2e` (recommended)
+- Unit: Vitest (`pnpm test`)
+- E2E: Playwright (`pnpm run test:e2e`)
+
+Suggested CI: lint → test → e2e (install browsers) → build → deploy.
+
+---
+
+## Deployment (notes)
+
+- Build the frontend with `pnpm build` and deploy with a SvelteKit adapter appropriate for your host.
+- Deploy Convex functions with `npx convex deploy`.
+- Ensure runtime secrets are set in your host (e.g. `BETTER_AUTH_SECRET`, Convex admin key, `SITE_URL`).
+
+Production checklist:
+
+1. Choose stable SvelteKit adapter for host (e.g. `adapter-node`).
+2. Add CI pipelines for tests and deploy.
+3. Add monitoring and health checks for auth flows.
 
 ---
 
@@ -161,7 +177,7 @@ See `CONTRIBUTING.md` for contributor guidelines. The repo follows standard lint
 
 ---
 
-## Where to look in the code for common tasks
+## Where to look next
 
 - Authentication / Better Auth integration: `src/convex/*` and `src/lib/auth-client.ts`.
 - Add new examples/pages: `src/routes/`.
