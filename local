@@ -1,0 +1,14 @@
+# Deployment used by `npx convex dev`
+CONVEX_DEPLOYMENT=dev:pastel-cardinal-852 # team: tan-devs, project: sandem
+
+PUBLIC_CONVEX_URL=https://pastel-cardinal-852.eu-west-1.convex.cloud
+
+PUBLIC_CONVEX_SITE_URL=https://pastel-cardinal-852.eu-west-1.convex.site
+
+# Must match your local Vite dev server exactly (no trailing slash)
+SITE_URL=http://localhost:5173
+
+# SvelteKit needs the secret too, not just Convex!
+BETTER_AUTH_SECRET=rbrf0twJdzxVfk3jTDqyLshxHxzJd4eYT4K1A6gyycc=
+
+PUBLIC_LIVEBLOCKS_KEY=pk_dev_gK8BGjiZSU0moIEA5yInSeVhnK4SO3LhTGzD6IN4No7l2hpj1ATgvvwXygs-NoMm

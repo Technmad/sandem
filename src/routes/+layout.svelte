@@ -9,7 +9,6 @@
 
 	const pages = [
 		{ path: '/', label: 'home' },
-		{ path: '/code', label: 'code' },
 		{ path: '/dev', label: 'dev' },
 		{ path: '/test/ssr', label: 'ssr' },
 		{ path: '/test/client-only', label: 'client' },

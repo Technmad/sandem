@@ -3,11 +3,11 @@ import { WebhookHandler } from '@liveblocks/node';
 import { ConvexHttpClient } from 'convex/browser';
 import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
-import { api } from '$lib/convex/_generated/api.js';
+import { api } from '$convex/_generated/api.js';
 
 // Initialize Convex and Liveblocks Webhook verifyer
 const convex = new ConvexHttpClient(publicEnv.PUBLIC_CONVEX_URL);
-const webhookHandler = new WebhookHandler(env.LIVEBLOCKS_WEBHOOK_SECRET); // Get this from Liveblocks dashboard
+const webhookHandler = new WebhookHandler(env.LIVEBLOCKS_WEBHOOK_SECRET!); // Get this from Liveblocks dashboard
 
 export async function POST({ request }) {
 	const body = await request.text();

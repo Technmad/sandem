@@ -1,5 +1,5 @@
 // convex/users.ts
-import { query } from './_generated/server';
+import { query } from './_generated/server.js';
 import { authComponent } from './auth.js';
 
 export const getMyProfile = query({

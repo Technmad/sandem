@@ -1,7 +1,7 @@
 import { Liveblocks } from '@liveblocks/node';
 import { ConvexHttpClient } from 'convex/browser';
 import { env } from '$env/dynamic/private';
-import { api } from '$lib/convex/_generated/api.js';
+import { api } from '$convex/_generated/api.js';
 
 // 1. Initialize Liveblocks with your SECRET key (Do not use the public key here)
 const liveblocks = new Liveblocks({
@@ -11,7 +11,7 @@ const liveblocks = new Liveblocks({
 // 2. Initialize Convex to read your database
 const convex = new ConvexHttpClient(env.PUBLIC_CONVEX_URL);
 
-export async function POST({ request, locals }) {
+export async function POST({  locals }) {
 	// Grab the user from your Auth provider (You mentioned Better Auth in schema.ts)
 	const authUserId = locals.session?.user?.id;
 
