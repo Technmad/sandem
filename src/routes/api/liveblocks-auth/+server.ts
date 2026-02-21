@@ -1,13 +1,13 @@
 import { Liveblocks } from '@liveblocks/node';
-import { SECRET_LIVEBLOCKS_KEY } from '$env/static/private';
+import { type RequestEvent } from '@sveltejs/kit';
 import { PUBLIC_CONVEX_SITE_URL } from '$env/static/public';
+import { LIVEBLOCKS_SECRET } from '$env/static/private';
 
 // 1. Initialize Liveblocks
-const liveblocksSecret = SECRET_LIVEBLOCKS_KEY;
-if (!liveblocksSecret) throw new Error('LIVEBLOCKS_SECRET_KEY is not set');
-const liveblocks = new Liveblocks({ secret: liveblocksSecret });
+// The secret key must start with "sk_" and should never be exposed client-side
+const liveblocks = new Liveblocks({ secret: LIVEBLOCKS_SECRET });
 
-export async function POST({ request }) {
+export async function POST({ request }: RequestEvent) {
 	// Debug: log whatever cookies we received from the browser
 	const cookieHeader = request.headers.get('cookie') || '';
 	console.debug(`[liveblocks-auth] incoming cookies: ${cookieHeader}`);

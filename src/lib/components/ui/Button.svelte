@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from 'bits-ui';
 	import type { ComponentProps } from 'svelte';
-	type Variant = 'push' | 'pop' | 'outline' | 'ghost';
+	type Variant = 'push' | 'pop' | 'outline' | 'ghost' | 'icon';
 
 	let {
 		children,
@@ -63,5 +63,13 @@
 	:global([data-button-root][data-variant='ghost']:hover) {
 		background: var(--accent);
 		color: white;
+	}
+	:global([data-button-root][data-variant='icon']) {
+		background: var(--bg);
+		border: none;
+		box-shadow: none;
+	}
+	:global([data-button-root][data-variant='icon']:hover) {
+		background: var(--mg);
 	}
 </style>

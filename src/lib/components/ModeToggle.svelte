@@ -31,7 +31,7 @@
 
 <Button
 	onclick={toggle}
-	variant="outline"
+	variant="icon"
 	aria-label="Toggle {mode === 'light' ? 'Dark' : 'Light'} Mode"
 	class="mode-toggle"
 	style="display: inline-flex; place-items: center; padding: 0.5rem; width: 100%; height: 100%"
