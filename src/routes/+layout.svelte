@@ -7,6 +7,7 @@
 
 	const navLinks = [
 		{ path: '/', label: 'Home' },
+		{ path: '/ide', label: 'IDE' },
 		{ path: '/dev', label: 'Dev' },
 		{ path: '/test/ssr', label: 'SSR Test' },
 		{ path: '/test/client-only', label: 'Client Test' },
