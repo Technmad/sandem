@@ -249,6 +249,7 @@ Please run `pnpm format` and `pnpm lint` before submitting a PR.
 - Add a new route or component? look under `src/routes/`.
 - Convex functions & schema go in `src/convex/`.
 - Tests live in `e2e/` and `src/lib/sveltekit/index.spec.ts`.
+
 ### WebContainer & Terminal demo ⚙️
 
 A work‑in‑progress feature allows you to spin up a full Node.js shell right
@@ -261,6 +262,7 @@ sandbox.
 Refer to [`TO-DO.md`](TO-DO.md) for a detailed checklist of implementation
 phases and installation notes; once the integration is finished we’ll move
 this documentation into its own guide.
+
 ---
 
 ## License
