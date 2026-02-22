@@ -128,8 +128,8 @@ importers:
         specifier: ^28.0.0
         version: 28.1.0(@noble/hashes@2.0.1)
       playwright:
-        specifier: ^1.58.2
-        version: 1.58.2
+        specifier: link:@vitest/browser/providers/playwright
+        version: link:@vitest/browser/providers/playwright
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
