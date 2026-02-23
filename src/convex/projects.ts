@@ -1,8 +1,8 @@
-import { mutation, query } from './_generated/server';
+import { mutation, query } from './_generated/server.js';
 import { v } from 'convex/values';
 
 // -------------------------
-// Create
+// Create & Get Workspace
 // -------------------------
 
 // Create a new multi-file project
@@ -13,10 +13,45 @@ export const createProject = mutation({
 		entry: v.string(),
 		visibleFiles: v.array(v.string()),
 		ownerId: v.optional(v.string()),
-		liveblocksRoomId: v.optional(v.string()) // 👈 ADD THIS
+		liveblocksRoomId: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {
 		return await ctx.db.insert('projects', { ...args });
+	}
+});
+
+// Get the user's permanent workspace, or create it if it doesn't exist
+export const getOrCreateUserWorkspace = mutation({
+	args: {
+		ownerId: v.string(),
+		defaultFiles: v.array(v.object({ name: v.string(), contents: v.string() })),
+		entry: v.string(),
+		visibleFiles: v.array(v.string())
+	},
+	handler: async (ctx, args) => {
+		// 1. Check if the user already has a project
+		const existingProject = await ctx.db
+			.query('projects')
+			.withIndex('by_owner', (q) => q.eq('ownerId', args.ownerId))
+			.first();
+
+		if (existingProject) {
+			return existingProject;
+		}
+
+		// 2. If not, create their permanent room tied deterministically to their ID
+		const permanentRoomId = `workspace-${args.ownerId}`;
+
+		const newProjectId = await ctx.db.insert('projects', {
+			title: 'My Permanent Workspace',
+			ownerId: args.ownerId,
+			liveblocksRoomId: permanentRoomId,
+			files: args.defaultFiles,
+			entry: args.entry,
+			visibleFiles: args.visibleFiles
+		});
+
+		return await ctx.db.get(newProjectId);
 	}
 });
 

@@ -28,16 +28,21 @@
 	let activeFile: string = $state(VITE_REACT_TEMPLATE.entry);
 	let editor: import('monaco-editor').editor.IStandaloneCodeEditor | null = $state(null);
 	let models: Record<string, import('monaco-editor').editor.ITextModel> = {};
-	let isSaving: boolean = $state(false);
 
-	// webcontainer prop
+	// Auto-save State
+	let saveStatus: 'Saved' | 'Saving...' | 'Unsaved changes' = $state('Saved');
+	let saveTimeout: ReturnType<typeof setTimeout>;
+
 	let {
 		webcontainer,
-		projectId // 👈 1. Extract projectId from props
+		project
 	}: {
 		webcontainer: import('@webcontainer/api').WebContainer;
-		projectId: string; // 👈 Add type
+		project: any;
 	} = $props();
+
+	// 1. Grab dynamic room ID from the permanently assigned database record
+	let roomId = $derived(project.liveblocksRoomId);
 
 	function getLanguage(fileName: string): string {
 		if (fileName.endsWith('.jsx') || fileName.endsWith('.js')) return 'javascript';
@@ -46,47 +51,39 @@
 		return 'plaintext';
 	}
 
-	// Handle saving the current template to the Convex database
-	async function handleSaveToConvex() {
-		isSaving = true;
+	// Debounced Auto-Save Logic
+	async function saveToConvex() {
+		saveStatus = 'Saving...';
 		try {
-			// compute at call time so we grab the latest prop value
-			const roomId = projectId || `room-${crypto.randomUUID()}`;
-
-			const filesArray = Object.entries(VITE_REACT_TEMPLATE.files).map(([name, node]) => ({
-				name: name,
-				contents: (node as { file: { contents: string } }).file.contents
-			}));
-
-			const newProjectId = await convexClient.mutation(api.projects.createProject, {
-				title: 'React Vite Starter',
-				entry: VITE_REACT_TEMPLATE.entry,
-				visibleFiles: VITE_REACT_TEMPLATE.visibleFiles,
-				files: filesArray,
-				liveblocksRoomId: roomId
+			// Scrape the latest content out of our Monaco models
+			const updatedFiles = VITE_REACT_TEMPLATE.visibleFiles.map((fileName) => {
+				const content = models[fileName]?.getValue() || '';
+				return { name: fileName, contents: content };
 			});
 
-			alert(`Success! Project saved with ID: ${newProjectId}`);
+			await convexClient.mutation(api.projects.updateProject, {
+				id: project._id,
+				files: updatedFiles
+			});
+			saveStatus = 'Saved';
 		} catch (error) {
-			console.error('Failed to save to Convex:', error);
-			alert('Failed to save. Check your console!');
-		} finally {
-			isSaving = false;
+			console.error('Failed to auto-save to Convex:', error);
+			saveStatus = 'Unsaved changes'; // Allow retry on next keystroke
 		}
 	}
-	// --- WebContainer helpers ---
-	async function mountFiles() {
-		// The template files are already in the correct WebContainer FileSystemTree format!
-		await webcontainer.mount(VITE_REACT_TEMPLATE.files);
+
+	function triggerAutoSave() {
+		saveStatus = 'Unsaved changes';
+		clearTimeout(saveTimeout);
+		saveTimeout = setTimeout(() => {
+			saveToConvex();
+		}, 1500); // Wait 1.5 seconds after they stop typing to fire the DB query
 	}
 
 	onMount(() => {
 		let isDestroyed = false;
 		let bindings: import('y-monaco').MonacoBinding[] = [];
 		let leaveRoom: () => void;
-
-		// boot the webcontainer by mounting files only
-		mountFiles();
 
 		self.MonacoEnvironment = {
 			getWorker: function (_moduleId: Id, label: string) {
@@ -105,8 +102,6 @@
 
 			if (isDestroyed) return;
 
-			// determine the appropriate room for this session
-			const roomId = projectId || `room-${crypto.randomUUID()}`;
 			const { room, leave } = client.enterRoom(roomId);
 			leaveRoom = leave;
 
@@ -118,11 +113,10 @@
 				automaticLayout: true
 			});
 
-			// --- 3. Setup Multiple Models ---
+			// --- Setup Multiple Models ---
 			for (const fileName of VITE_REACT_TEMPLATE.visibleFiles) {
 				const language = getLanguage(fileName);
 
-				// Create Monaco model as EMPTY initially! Let Yjs act as the source of truth.
 				const model = monaco.editor.createModel(
 					'',
 					language,
@@ -140,9 +134,12 @@
 				);
 				bindings.push(binding);
 
-				// --- NEW: WebContainer HMR Sync ---
-				// Listen for code changes and write them directly to the WebContainer!
+				// Listen for keystrokes
 				model.onDidChangeContent(async () => {
+					// 1. Kick off the auto-save countdown
+					triggerAutoSave();
+
+					// 2. Write straight to WebContainer to trigger HMR Preview
 					try {
 						await webcontainer.fs.writeFile(fileName, model.getValue());
 					} catch (error) {
@@ -151,20 +148,18 @@
 				});
 			}
 
-			// Mount the default entry file to start
 			editor.setModel(models[activeFile]);
 
-			// --- 4. Safely populate Default Data ---
+			// --- Safely populate Default Data from Convex (Not the template!) ---
 			yProvider.on('sync', (isSynced: boolean) => {
 				if (isSynced) {
 					for (const fileName of VITE_REACT_TEMPLATE.visibleFiles) {
 						const yText = yDoc.getText(fileName);
 
-						// If the Yjs text is completely empty, it means this room is brand new.
 						if (yText.length === 0) {
-							const initialContent = (
-								VITE_REACT_TEMPLATE.files[fileName] as { file: { contents: string } }
-							).file.contents;
+							// Check the database project files!
+							const dbFile = project.files.find((f: any) => f.name === fileName);
+							const initialContent = dbFile ? dbFile.contents : '';
 							yText.insert(0, initialContent);
 						}
 					}
@@ -176,6 +171,7 @@
 
 		return () => {
 			isDestroyed = true;
+			clearTimeout(saveTimeout);
 			bindings.forEach((b) => b.destroy());
 			Object.values(models).forEach((m) => m.dispose());
 			if (editor) editor.dispose();
@@ -203,9 +199,11 @@
 				</button>
 			{/each}
 
-			<button class="save-btn" onclick={handleSaveToConvex} disabled={isSaving}>
-				{isSaving ? 'Saving...' : '💾 Save to Convex'}
-			</button>
+			<div class="save-indicator">
+				<span class:saving={saveStatus === 'Saving...'} class:saved={saveStatus === 'Saved'}>
+					{saveStatus === 'Saved' ? '✓ ' : ''}{saveStatus}
+				</span>
+			</div>
 		</div>
 
 		<div bind:this={element} class="monaco-container"></div>
@@ -226,6 +224,7 @@
 		display: flex;
 		background-color: #2d2d2d;
 		overflow-x: auto;
+		align-items: center; /* Center the new text vertically */
 	}
 	.tab {
 		padding: 10px 16px;
@@ -250,28 +249,28 @@
 		color: #ffffff;
 		border-top: 2px solid #007acc; /* VS Code blue accent */
 	}
-	.save-btn {
+
+	/* Cool minimal save indicator styling */
+	.save-indicator {
 		margin-left: auto;
-		background-color: #007acc;
-		color: white;
-		border: none;
-		padding: 0 16px;
-		cursor: pointer;
+		padding-right: 16px;
 		font-family:
 			system-ui,
 			-apple-system,
 			sans-serif;
-		font-size: 13px;
-		font-weight: 500;
-		transition: background-color 0.2s;
+		font-size: 12px;
+		color: #969696;
 	}
-	.save-btn:hover:not(:disabled) {
-		background-color: #005f9e;
+	.save-indicator span {
+		transition: color 0.3s ease;
 	}
-	.save-btn:disabled {
-		background-color: #555;
-		cursor: not-allowed;
+	.save-indicator .saving {
+		color: #e5c07b; /* Slight yellow */
 	}
+	.save-indicator .saved {
+		color: #98c379; /* Green checkmark vibes */
+	}
+
 	.monaco-container {
 		flex: 1;
 		width: 100%;
