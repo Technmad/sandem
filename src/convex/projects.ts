@@ -1,6 +1,12 @@
 import { mutation, query } from './_generated/server.js';
 import { v } from 'convex/values';
 
+// Define a reusable validator for your file objects
+const fileSchema = v.object({
+	name: v.string(),
+	contents: v.string()
+});
+
 // -------------------------
 // Create & Get Workspace
 // -------------------------
@@ -9,7 +15,7 @@ import { v } from 'convex/values';
 export const createProject = mutation({
 	args: {
 		title: v.string(),
-		files: v.array(v.object({ name: v.string(), contents: v.string() })),
+		files: v.array(fileSchema), // Strict array of objects
 		entry: v.string(),
 		visibleFiles: v.array(v.string()),
 		ownerId: v.optional(v.string()),

@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { WebContainer } from '@webcontainer/api';
+	import { WebContainer, type FileSystemTree } from '@webcontainer/api';
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge';
 	import { useConvexClient } from 'convex-svelte';
 	import { api } from '$convex/_generated/api.js';
+	import type { Doc } from '$convex/_generated/dataModel.js';
 
 	import Editor from '$lib/components/Editor.svelte';
 	import Preview from '$lib/components/Preview.svelte';
@@ -18,47 +19,53 @@
 
 	let wc: WebContainer | undefined = $state();
 	let error: string | undefined = $state();
-	let project: any = $state(); // The database project object
+	let project = $state<Doc<'projects'> | null | undefined>(undefined); // The database project object
 
-	onMount(() => {
-		async function init() {
-			try {
-				if (!user?.id) {
-					error = 'You must be logged in to access the IDE.';
-					return;
-				}
+	let isBooting = false; // Guard to prevent multiple boot attempts
 
-				// 1. Convert template format into an array for Convex
-				const filesArray = Object.entries(VITE_REACT_TEMPLATE.files).map(([name, node]) => ({
-					name,
-					contents: (node as { file: { contents: string } }).file.contents
-				}));
-
-				// 2. Fetch or Create their permanent project
-				project = await convexClient.mutation(api.projects.getOrCreateUserWorkspace, {
-					ownerId: user.id,
-					defaultFiles: filesArray,
-					entry: VITE_REACT_TEMPLATE.entry,
-					visibleFiles: VITE_REACT_TEMPLATE.visibleFiles
-				});
-
-				// 3. Convert Convex array format back to WebContainer's expected file tree
-				const wcFiles: Record<string, any> = {};
-				for (const f of project.files) {
-					wcFiles[f.name] = { file: { contents: f.contents } };
-				}
-
-				// 4. Boot WebContainer with the USER'S permanently saved files!
-				const instance = await WebContainer.boot();
-				await instance.mount(wcFiles);
-				wc = instance;
-			} catch (e) {
-				console.error('WebContainer boot failed:', e);
-				error = 'Failed to boot WebContainer.';
-			}
+	$effect(() => {
+		// Only run init if we have a user, haven't booted yet, and aren't currently booting
+		if (user?.id && !wc && !isBooting) {
+			isBooting = true;
+			init();
 		}
-		init();
 	});
+
+	// Move the init function outside of the effect for clarity
+	async function init() {
+		try {
+			// 1. Convert template format
+			const filesArray = Object.entries(VITE_REACT_TEMPLATE.files).map(([name, node]) => ({
+				name,
+				contents: (node as { file: { contents: string } }).file.contents
+			}));
+
+			// 2. Fetch or Create workspace
+			project = await convexClient.mutation(api.projects.getOrCreateUserWorkspace, {
+				ownerId: user!.id,
+				defaultFiles: filesArray,
+				entry: VITE_REACT_TEMPLATE.entry,
+				visibleFiles: VITE_REACT_TEMPLATE.visibleFiles
+			});
+
+			if (!project) throw new Error('Failed to load or create workspace.');
+
+			// 3. Prepare WebContainer files
+			const wcFiles: import('@webcontainer/api').FileSystemTree = {};
+			for (const f of project.files) {
+				wcFiles[f.name] = { file: { contents: f.contents } };
+			}
+
+			// 4. Boot WebContainer
+			const instance = await WebContainer.boot();
+			await instance.mount(wcFiles);
+			wc = instance;
+		} catch (e) {
+			console.error('WebContainer boot failed:', e);
+			error = 'Failed to boot WebContainer.';
+			isBooting = false;
+		}
+	}
 </script>
 
 {#if error}

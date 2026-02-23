@@ -4,6 +4,9 @@
 	import { createClient } from '@liveblocks/client';
 	import { getYjsProviderForRoom } from '@liveblocks/yjs';
 
+	import type { Doc } from '$convex/_generated/dataModel.js';
+	import type { WebContainer } from '@webcontainer/api';
+
 	// Convex imports
 	import { useConvexClient } from 'convex-svelte';
 	import { api } from '$convex/_generated/api.js';
@@ -16,7 +19,6 @@
 
 	// --- Import Template and Types ---
 	import { VITE_REACT_TEMPLATE } from '$lib/templates.js';
-	import type { Id } from '$convex/_generated/dataModel.js';
 
 	const convexClient = useConvexClient();
 	const client = createClient({
@@ -33,16 +35,17 @@
 	let saveStatus: 'Saved' | 'Saving...' | 'Unsaved changes' = $state('Saved');
 	let saveTimeout: ReturnType<typeof setTimeout>;
 
+	// 1. Define strict prop types
 	let {
 		webcontainer,
 		project
 	}: {
-		webcontainer: import('@webcontainer/api').WebContainer;
-		project: any;
+		webcontainer: WebContainer;
+		project: Doc<'projects'>; // Replaced any with the Convex Doc type
 	} = $props();
 
 	// 1. Grab dynamic room ID from the permanently assigned database record
-	let roomId = $derived(project.liveblocksRoomId);
+	let roomId = $derived(project?.liveblocksRoomId ?? '');
 
 	function getLanguage(fileName: string): string {
 		if (fileName.endsWith('.jsx') || fileName.endsWith('.js')) return 'javascript';
@@ -52,41 +55,39 @@
 	}
 
 	// Debounced Auto-Save Logic
-	async function saveToConvex() {
-		saveStatus = 'Saving...';
-		try {
-			// Scrape the latest content out of our Monaco models
-			const updatedFiles = VITE_REACT_TEMPLATE.visibleFiles.map((fileName) => {
-				const content = models[fileName]?.getValue() || '';
-				return { name: fileName, contents: content };
-			});
+	async function saveToConvex(content: string) {
+		// 1. Guard against undefined/null project
+		if (!project) return;
 
+		try {
 			await convexClient.mutation(api.projects.updateProject, {
-				id: project._id,
-				files: updatedFiles
+				id: project._id, // Now valid because of the guard above
+				files: project.files.map((f) => (f.name === activeFile ? { ...f, contents: content } : f))
 			});
-			saveStatus = 'Saved';
-		} catch (error) {
-			console.error('Failed to auto-save to Convex:', error);
-			saveStatus = 'Unsaved changes'; // Allow retry on next keystroke
+		} catch (err) {
+			console.error('Save failed', err);
 		}
 	}
 
-	function triggerAutoSave() {
+	// 1. Update triggerAutoSave to accept the content
+	function triggerAutoSave(content: string) {
 		saveStatus = 'Unsaved changes';
 		clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(() => {
-			saveToConvex();
-		}, 1500); // Wait 1.5 seconds after they stop typing to fire the DB query
+			saveToConvex(content); // Pass it down
+		}, 1500);
 	}
 
 	onMount(() => {
+		if (!project?.liveblocksRoomId) return; // Guard clause
+
 		let isDestroyed = false;
 		let bindings: import('y-monaco').MonacoBinding[] = [];
 		let leaveRoom: () => void;
 
 		self.MonacoEnvironment = {
-			getWorker: function (_moduleId: Id, label: string) {
+			// 👉 Change `_moduleId: Id` to `_moduleId: string`
+			getWorker: function (_moduleId: string, label: string) {
 				if (label === 'typescript' || label === 'javascript') return new tsWorker();
 				if (label === 'json') return new jsonWorker();
 				if (label === 'html') return new htmlWorker();
@@ -136,8 +137,8 @@
 
 				// Listen for keystrokes
 				model.onDidChangeContent(async () => {
-					// 1. Kick off the auto-save countdown
-					triggerAutoSave();
+					// Pass the current editor text into the save function
+					triggerAutoSave(model.getValue());
 
 					// 2. Write straight to WebContainer to trigger HMR Preview
 					try {
@@ -158,7 +159,7 @@
 
 						if (yText.length === 0) {
 							// Check the database project files!
-							const dbFile = project.files.find((f: any) => f.name === fileName);
+							const dbFile = project.files.find((f) => f.name === fileName);
 							const initialContent = dbFile ? dbFile.contents : '';
 							yText.insert(0, initialContent);
 						}
@@ -180,6 +181,8 @@
 	});
 
 	$effect(() => {
+		if (!project) return;
+
 		if (editor && models[activeFile]) {
 			editor.setModel(models[activeFile]);
 		}
