@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { usePreview } from '$lib/preview/usePreview.svelte.js';
+	import { usePreview } from '$lib/hooks/usePreview.svelte.js';
 
-	import { getIDEContext } from '$lib/contexts/ide.js';
+	import { getIDEContext } from '$lib/ide.js';
 
 	// 1. Grab context
 	const ide = getIDEContext();

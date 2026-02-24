@@ -12,9 +12,9 @@
 	import { VITE_REACT_TEMPLATE } from '$lib/templates.js';
 
 	// --- 1. Import New Abstractions ---
-	import { setupMonacoWorkers } from '$lib/monaco/setupWorker.js';
+	import { setupMonacoWorkers } from '$lib/hooks/setupWorker.js';
 
-	import { getIDEContext } from '$lib/contexts/ide.js';
+	import { getIDEContext } from '$lib/ide.js';
 	import { createAutoSaver } from '$lib/hooks/useAutoSave.svelte.js';
 
 	// 2. Grab the context instance

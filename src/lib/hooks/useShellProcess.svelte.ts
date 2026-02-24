@@ -24,9 +24,6 @@ export function useShellProcess(getWebcontainer: () => WebContainer) {
 
 		shellInput = shellProcess.input.getWriter();
 
-		// Inject the boot command directly into the shell with a carriage return (\r)
-		shellInput.write('npm install && npm run dev\r');
-
 		shellProcess.output.pipeTo(
 			new WritableStream<string>({
 				write(data) {
@@ -35,10 +32,15 @@ export function useShellProcess(getWebcontainer: () => WebContainer) {
 			})
 		);
 
+		function runCommand(cmd: string) {
+			if (shellInput) shellInput.write(`${cmd}\r`);
+		}
+
 		// Handle Resize (UI -> WebContainer)
 		terminal.onResize((size: { cols: number; rows: number }) => {
 			shellProcess?.resize({ cols: size.cols, rows: size.rows });
 		});
+		return { initShell, writeInput, runCommand };
 	}
 
 	// Handle Input (UI -> WebContainer)

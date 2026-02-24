@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { setIDEContext } from '$lib/contexts/ide.js';
+	import { setIDEContext } from '$lib/ide-context.js';
 	import { useQuery } from 'convex-svelte';
 	import { api } from '$convex/_generated/api.js';
 	import { WebContainer } from '@webcontainer/api';
 	import type { Doc } from '$convex/_generated/dataModel.js';
 	import { onMount } from 'svelte';
+	import type { FileSystemTree } from '@webcontainer/api';
 
 	let { children, data } = $props();
 
@@ -17,8 +18,25 @@
 	// 2. WebContainer state
 	let webcontainerInstance = $state<WebContainer | undefined>();
 
+	// Add a derived state to transform Convex files to WebContainer tree
+	const fileTree = $derived.by(() => {
+		if (!project.data) return {};
+		const tree: FileSystemTree = {};
+		project.data.files.forEach((file) => {
+			tree[file.name] = {
+				file: { contents: file.contents }
+			};
+		});
+		return tree;
+	});
+
 	onMount(async () => {
-		webcontainerInstance = await WebContainer.boot();
+		const instance = await WebContainer.boot();
+		// Wait for Convex data to be ready, then mount
+		if (project.data) {
+			await instance.mount(fileTree);
+		}
+		webcontainerInstance = instance;
 	});
 
 	// 3. Pass closures to the context to avoid "capturing" initial null values
