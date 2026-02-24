@@ -6,31 +6,63 @@ export function createAutoSaver(getProject: () => Doc<'projects'> | undefined) {
 	const convexClient = useConvexClient();
 
 	let saveStatus = $state<'Saved' | 'Saving...' | 'Unsaved changes'>('Saved');
-	let saveTimeout: ReturnType<typeof setTimeout>;
+	let saveTimeout: ReturnType<typeof setTimeout> | undefined;
 
-	async function saveToConvex(activeFile: string, content: string) {
+	// Track in-flight saves to avoid clobbering with stale data
+	const pendingSaves = new Map<string, string>(); // fileName -> latest content to save
+
+	async function flushPendingSaves() {
 		const project = getProject();
-		if (!project) return;
+		if (!project || pendingSaves.size === 0) {
+			saveStatus = 'Saved';
+			return;
+		}
+
+		saveStatus = 'Saving...';
+		const snapshot = new Map(pendingSaves);
+		pendingSaves.clear();
 
 		try {
+			const updatedFiles = project.files.map((f) =>
+				snapshot.has(f.name) ? { ...f, contents: snapshot.get(f.name)! } : f
+			);
+
 			await convexClient.mutation(api.projects.updateProject, {
 				id: project._id,
-				files: project.files.map((f) => (f.name === activeFile ? { ...f, contents: content } : f))
+				files: updatedFiles
 			});
+
 			saveStatus = 'Saved';
 		} catch (err) {
 			console.error('Save failed', err);
+			// Re-queue failed saves so they retry on next trigger
+			snapshot.forEach((content, fileName) => {
+				if (!pendingSaves.has(fileName)) {
+					pendingSaves.set(fileName, content);
+				}
+			});
 			saveStatus = 'Unsaved changes';
 		}
 	}
 
-	function triggerAutoSave(activeFile: string, content: string) {
+	/**
+	 * Call this ONLY from local user input changes (not remote Yjs syncs).
+	 */
+	function triggerAutoSave(fileName: string, content: string) {
 		saveStatus = 'Unsaved changes';
+		pendingSaves.set(fileName, content);
+
 		clearTimeout(saveTimeout);
-		saveTimeout = setTimeout(() => {
-			saveStatus = 'Saving...';
-			saveToConvex(activeFile, content);
-		}, 1500);
+		saveTimeout = setTimeout(flushPendingSaves, 1500);
+	}
+
+	/**
+	 * Force an immediate save — useful on tab switch or beforeunload.
+	 */
+	async function forceSave(fileName: string, content: string) {
+		pendingSaves.set(fileName, content);
+		clearTimeout(saveTimeout);
+		await flushPendingSaves();
 	}
 
 	function cleanup() {
@@ -42,6 +74,7 @@ export function createAutoSaver(getProject: () => Doc<'projects'> | undefined) {
 			return saveStatus;
 		},
 		triggerAutoSave,
+		forceSave,
 		cleanup
 	};
 }

@@ -1,11 +1,10 @@
 # Sandem
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)  
-[![SvelteKit](https://img.shields.io/badge/framework-SvelteKit-orange.svg)]
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![SvelteKit](https://img.shields.io/badge/framework-SvelteKit-orange.svg)](https://svelte.dev)
+[![Convex](https://img.shields.io/badge/backend-Convex-purple.svg)](https://convex.dev)
 
-Version: 0.8.0
-
-**Status:** ✅ build succeeded on 2026‑02‑24; all checks (type, lint, format, E2E) are green
+---
 
 <picture>
   <source srcset="./bannerDark.webp" media="(prefers-color-scheme: dark)">
@@ -13,7 +12,30 @@ Version: 0.8.0
   <img src="./banner.webp" alt="Auth components preview">
 </picture>
 
-## Quick summary ✅
+**Version:** 0.8.0 · **Status:** ✅ build passing · all checks green
+
+---
+
+A collaborative, in-browser IDE powered by [WebContainer API](https://webcontainer.io). Spin up a real Node.js environment in your browser tab, edit files in Monaco, run commands in a full terminal, see a live preview — all without a cloud VM.
+
+---
+
+## What it does
+
+| Feature                          | Tech                              |
+| -------------------------------- | --------------------------------- |
+| In-browser Node.js runtime       | WebContainer API (StackBlitz)     |
+| Code editor with multi-file tabs | Monaco Editor + Yjs               |
+| Real-time collaboration          | Liveblocks + Yjs CRDT             |
+| Live preview iframe              | WebContainer `server-ready` event |
+| Integrated terminal              | xterm.js → `jsh` shell            |
+| Project persistence              | Convex real-time database         |
+| Auth (email + GitHub OAuth)      | better-auth + Convex adapter      |
+| Themeable UI                     | CSS semantic tokens, 4 palettes   |
+
+---
+
+## How it does
 
 - **Frontend:** [SvelteKit](https://svelte.dev/docs) ([`Svelte v5`](https://github.com/sveltejs/svelte) with runes)
 - **UI toolkit:** a growing library of reusable, themeable components (`Button`, `Card`, `Accordion`, `Tabs`, etc.) built with modern Svelte conventions and semantic CSS tokens.
@@ -26,146 +48,136 @@ Version: 0.8.0
 - **Docker:** development and deployment ready with `Dockerfile` / `docker-compose` (`README.Docker.md`).
 - **Tests:** [`Vitest`](https://github.com/vitest-dev/vitest) (unit) and [`Playwright`](https://github.com/microsoft/playwright) (E2E).
 
-This repo serves both as a **modern Svelte auth starter kit** with a clean component library and as a **hands‑on reference** for building a collaborative, in‑browser IDE.
-
----
-
-## Core Features 🚀
-
-- **In-Browser Node.js OS:** Spin up a fully functional Node.js environment directly in the browser using the [WebContainer API](https://webcontainer.io). No cloud VMs required.
-- **Interactive Terminal:** A fully integrated terminal built with `xterm` connected directly to the WebContainer's `jsh` shell. Run `npm install`, build scripts, and see output in real-time.
-- **Collaborative Editing:** Multiplayer code editing powered by Liveblocks and Yjs, integrated seamlessly into the Monaco Editor.
-- **Split-Pane Layout:** A responsive, VS Code-inspired 3-panel grid featuring the Editor, a Live Preview iframe, and the Terminal.
-
----
-
-## Table of contents
-
-- Architecture & key patterns
-- Quick start
-- Environment variables
-- Development & testing
-- Project layout
-- Deployment
-- Troubleshooting
-- Contributing & roadmap
-
----
-
-## Architecture & key patterns
-
-Sandem is built as a modular example of how to compose several modern web-platform pieces:
-
-- **SvelteKit** handles routing, SSR, and API routes while keeping the UI reactive with runes (`$state`, `$props`, `$derived`).
-- **Convex** hosts serverless functions and acts as a realtime database; helpers in `src/lib/auth-client.ts` wire authentication state to the UI.
-- **Auth** uses `better-auth` together with a small Convex adapter to manage sign‑in, sign‑out, and user sessions on both server and client.
-- **UI component library** lives under `src/lib/components` and hosts colors, layout primitives, and atomic UI pieces that are wired to CSS custom properties defined in `src/app.css`.
-- **Theming** uses two token layers: primitive color/spacing tokens in `app.css`, and semantic tokens (e.g. `--color-brand`) that are swapped per theme via `[data-theme]` attributes.
-
-  To experiment yourself, open `/docs/theme` in the running app or copy the following snippet into a Svelte REPL or a new page:
-
-  ```svelte
-  <script>
-  	let currentTheme = 'default';
-  	let currentMode = 'light';
-  	const themes = ['default', 'forest', 'solar', 'ocean'];
-  	$: document.documentElement.dataset.theme = currentTheme;
-  	$: document.documentElement.dataset.mode = currentMode;
-  </script>
-
-  <select bind:value={currentTheme}
-  	>{#each themes as t}<option value={t}>{t}</option>{/each}</select
-  >
-  <select bind:value={currentMode}><option>light</option><option>dark</option></select>
-  <button style="background:var(--accent);color:var(--fg)">Hello</button>
-  ```
-
-- **WebContainer / Terminal / Monaco** code is concentrated in the `routes/ide` page and supporting modules; COOP/COEP headers are enforced via `vite.config.ts` and `src/hooks.server.ts` so the container can boot securely.
-
 ---
 
 ## Quick start
 
-1. `pnpm install` to fetch dependencies.
-2. Put your Convex URL in `.env` (see `.env.example`).
-3. `pnpm run dev` to start the dev server at http://localhost:5173.
-4. Optionally, spin up with Docker: `docker compose up --build` (see [README.Docker.md](README.Docker.md)).
+```bash
+pnpm install
+cp .env.example .env.local   # add your Convex + Liveblocks keys
+pnpm dev
+```
 
-> Tip: switch themes with the selector in the header and toggle dark/light mode using the moon/sun icon. For a live demo of the color palettes, visit `/docs/theme` after the app is running; it provides interactive selectors and sample components.
+App runs at `http://localhost:5173`. The Convex dev server starts alongside it via `concurrently`.
+
+> **Note:** WebContainer requires `Cross-Origin-Embedder-Policy: require-corp` and `Cross-Origin-Opener-Policy: same-origin` headers. These are set automatically by `src/hooks.server.ts` for all non-API routes.
 
 ---
 
 ## Environment variables
 
-- `PUBLIC_CONVEX_URL` – Convex deployment URL used by the client.
-- `CONVEX_ADMIN_KEY` – (server‑only) key for administrative operations, loaded automatically by Convex CLI.
+```env
+# .env.local
+PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
+CONVEX_DEPLOYMENT=dev:your-deployment-name
+
+LIVEBLOCKS_SECRET_KEY=sk_dev_...
+SITE_URL=http://localhost:5173
+
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+```
 
 ---
 
 ## Project layout
 
-- `src/routes` – SvelteKit pages; notable entry points:\
-  `routes/(home)/+page.svelte` – marketing home with theme demo.\
-  `routes/ide/...` – the in‑browser IDE layout and boot code.\
-  `routes/test/` – various examples and auth test pages.\
-- `src/lib/components` – shared component library organized by category\
-  `colors`, `layout`, `ui`, `ide`, `preview`, etc.
-- `src/convex` – Convex backend functions and schema definitions.
-- `e2e/` and `src/lib/sveltekit` – integration and unit tests.
-- `Dockerfile` / `compose.yaml` – container definitions for local dev and cloud builds.
+```
+src/
+├── convex/               # Backend: schema, mutations, queries, auth
+│   ├── schema.ts         # projects table definition
+│   ├── projects.ts       # CRUD mutations/queries
+│   ├── auth.ts           # better-auth integration
+│   └── http.ts           # auth HTTP routes
+├── lib/
+│   ├── components/
+│   │   └── ide/          # Editor, Terminal, Preview, Tabs
+│   ├── hooks/            # useAutoSave, useFilesystem, usePreview, useShellProcess
+│   └── utils/            # ide-context, auth-client, filesystem-utils, templates
+└── routes/
+    ├── (home)/           # Landing page
+    ├── login/            # Auth page (sign in / sign up)
+    ├── projects/         # Dashboard — list and create projects
+    └── projects/[projectId]/   # IDE layout + page
+```
 
 ---
 
-## Docker support
+## Architecture
 
-Sandem ships with a production‑ready Dockerfile and a `docker compose` stack for development. See [README.Docker.md](README.Docker.md) for usage details.
+### Boot sequence (`/projects/[projectId]`)
 
----
+1. SvelteKit `+layout.ts` disables SSR, extracts `projectId` from params
+2. `+layout.svelte` fires `WebContainer.boot()` immediately (doesn't wait for data)
+3. Convex `useQuery` fetches project data live
+4. `$effect` awaits both, then calls `webcontainer.mount(projectFilesToFSTree(project.files))`
+5. `setIDEContext()` exposes stable closures to child components
+6. `{#if ready}` gate renders Editor, Terminal, Preview only after mount completes
 
-## Development & testing
+### File sync
 
-Run `pnpm run check` for TypeScript/Svelte diagnostics, `pnpm run format` for prettier, and `pnpm run lint` for ESLint. Unit tests: `pnpm run test` (Vitest). E2E: `pnpm run e2e` (Playwright).
+- **Convex → WebContainer:** on mount, all `project.files` are written to the FS via `webcontainer.mount()`
+- **Editor → WebContainer:** every keystroke writes to the FS immediately via `wc.fs.writeFile()`
+- **Editor → Convex:** debounced 1.5s autosave via `useConvexClient().mutation(updateProject)`
+- **Collaboration:** Liveblocks Yjs provider syncs editor content across peers; local changes (origin `null`) trigger saves, remote changes are skipped
 
----
+### Template format
 
-## Deployment
+Files are stored in Convex as `{ name: string, contents: string }[]` — a flat array. `filesystem-utils.ts` converts this to a WebContainer `FileSystemTree` at mount time, handling nested paths.
 
-Build with `pnpm run build` or via Docker. Ensure COOP/COEP headers are preserved on your hosting platform for WebContainer functionality.
-
----
-
-## Troubleshooting
-
-- If the IDE fails to boot, check COOP/COEP headers and open console errors.\
-- Missing theme colours? Clear localStorage or verify `data-theme` attribute on `<html>`.
-
----
-
-## Contributing & roadmap
-
-The repository is evolving rapidly; contributions are welcome. Current top priorities:
-
-1. Finish the shared webcontainer helper and extract logic from the IDE page.\
-2. Create a live component catalog and improve theming documentation.\
-3. Add CI workflows (lint → test → build → deploy) and Docker publish pipeline.\
-4. Expand the E2E suite to cover auth edge cases and UI component rendering.\
-5. Add accessibility audits and visual regression testing for theme variants.
-
-Please run `pnpm format` and `pnpm lint` before submitting a PR.
+```ts
+// Creating a project from a template
+await client.mutation(api.projects.createProject, {
+	title: 'My App',
+	ownerId: user._id,
+	files: VITE_REACT_TEMPLATE.files, // ProjectFile[] — flat array
+	entry: VITE_REACT_TEMPLATE.entry,
+	visibleFiles: VITE_REACT_TEMPLATE.visibleFiles
+});
+```
 
 ---
 
-## Where to look next
+## UI / Theming
 
-- WebContainer IDE UI: `src/routes/ide/+page.svelte` and `src/lib/components/`.
-- Auth setup: `src/convex/*` and `src/lib/auth-client.ts`.
-- Convex functions & schema go in `src/convex/`.
-- Tests live in `e2e/` and `src/lib/sveltekit/index.spec.ts`.
+Four built-in palettes (`default`, `forest`, `solar`, `ocean`) with light/dark variants, controlled via `data-theme` and `data-mode` attributes on `<html>`. All component colors reference semantic CSS variables (`--bg`, `--mg`, `--fg`, `--text`, `--muted`, `--border`, `--accent`, etc.) defined in `app.css`.
+
+The IDE route (`/projects/[projectId]`) overrides the theme with hardcoded dark values via `body:has(.ide-grid)` — editors always render dark regardless of the active theme.
+
+---
+
+## Scripts
+
+```bash
+pnpm dev          # start client + Convex dev server
+pnpm build        # production build
+pnpm check        # svelte-check TypeScript diagnostics
+pnpm lint         # ESLint
+pnpm format       # Prettier
+pnpm test         # Vitest unit tests
+pnpm e2e          # Playwright E2E
+```
+
+---
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
+See [README.Docker.md](README.Docker.md) for environment variable injection and production deployment notes.
+
+---
+
+## Deployment notes
+
+- Ensure COOP/COEP headers survive your hosting proxy/CDN — WebContainer will not boot without them
+- Convex deployment URL must be set in environment; `PUBLIC_CONVEX_URL=null` breaks all queries
+- Liveblocks secret key is server-only; never expose it client-side
 
 ---
 
 ## License
 
 [MIT](LICENSE)
-
----

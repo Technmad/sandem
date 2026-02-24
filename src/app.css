@@ -1,14 +1,13 @@
 /* --- Semantic Tokens --- */
 :root {
 	--radius: 2rem;
-	--time: 3000ms;
+	--time: 300ms;
 	--icon-size: 2rem;
 	--ease: cubic-bezier(0.4, 0, 0.2, 1);
 	--fonts: 'Helvetica Neue', Arial, sans-serif;
 
 	--gradient-engrave: linear-gradient(0deg, var(--fg) 5%, var(--mg));
 	--gradient-push: linear-gradient(0deg, var(--fg), var(--mg));
-
 	--gradient-embose: linear-gradient(0deg, var(--mg) 95%, var(--fg));
 	--gradient-pull: linear-gradient(0deg, var(--mg), var(--fg));
 
@@ -35,7 +34,6 @@
 	--glint: hsl(0 0% 80%);
 	--shadow: 0px 2px 2px hsla(0, 0%, 0%, 0.15);
 }
-
 :root[data-theme='default'][data-mode='dark'] {
 	--bg: hsl(0 0% 0%);
 	--mg: hsl(0 0% 5%);
@@ -62,7 +60,6 @@
 	--glint: hsl(120 40% 70%);
 	--shadow: 0px 2px 2px hsla(120, 50%, 0%, 0.15);
 }
-
 :root[data-theme='forest'][data-mode='dark'] {
 	--bg: hsl(120 50% 5%);
 	--mg: hsl(120 50% 10%);
@@ -89,7 +86,6 @@
 	--glint: hsl(35 50% 75%);
 	--shadow: 0px 2px 2px hsla(20, 60%, 0%, 0.15);
 }
-
 :root[data-theme='solar'][data-mode='dark'] {
 	--bg: hsl(20 60% 10%);
 	--mg: hsl(20 60% 15%);
@@ -116,7 +112,6 @@
 	--glint: hsl(210 50% 75%);
 	--shadow: 0px 2px 2px hsla(220, 60%, 0%, 0.15);
 }
-
 :root[data-theme='ocean'][data-mode='dark'] {
 	--bg: hsl(220 60% 8%);
 	--mg: hsl(220 60% 13%);
@@ -129,18 +124,34 @@
 	--shadow: 0px 2px 2px hsla(210, 50%, 100%, 0.1);
 }
 
-/* --- Reset Globals (User Agent Stylesheets) --- */
-
+/* =========================================
+   RESET & BASE
+   ========================================= */
 *,
 *::before,
 *::after {
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
-	transition: all var(--time) var(--ease);
+	/* NO global transition here — it breaks Monaco, xterm, and WebContainer.
+	   Transitions are applied per-component only where they make sense.       */
 }
+
 .no-transition {
 	transition: none !important;
+}
+
+/* Theme-aware transitions only on elements that benefit from them */
+button,
+a,
+input,
+select,
+textarea {
+	transition:
+		background-color var(--time) var(--ease),
+		border-color var(--time) var(--ease),
+		color var(--time) var(--ease),
+		opacity var(--time) var(--ease);
 }
 
 html {
@@ -164,6 +175,14 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 }
 
+/* ── IDE route override ─────────────────────────────────────────────────────
+   The /projects/[projectId] layout renders a full-viewport IDE.
+   Kill body scroll and any theme background bleed-through.                   */
+body:has(.ide-grid) {
+	overflow: hidden;
+	background: #151515;
+}
+
 /* Media and graphics */
 img,
 picture,
@@ -171,10 +190,8 @@ video,
 canvas,
 svg {
 	display: block;
-	max-width: auto;
-	height: 100%;
+	max-width: 100%;
 }
-
 /* Form elements inherit font styles */
 input,
 button,
@@ -186,7 +203,6 @@ select {
 	line-height: inherit;
 }
 
-/* Basic element resets */
 button {
 	cursor: pointer;
 }

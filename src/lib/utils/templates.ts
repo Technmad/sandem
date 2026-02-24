@@ -38,3 +38,23 @@ export const VITE_REACT_TEMPLATE: Template = {
 	entry: 'App.jsx',
 	visibleFiles: ['App.jsx', 'index.jsx', 'index.html']
 };
+
+// Helpers
+
+/**
+ * Convert a WebContainer-style template map into the plain array of
+ * `{name, contents}` objects used by the Convex schema. The database stores
+ * files as a flat list, so we turn the record into an array during project
+ * creation.
+ */
+export function templateToProjectFiles(
+	files: Record<string, FileNode>
+): { name: string; contents: string }[] {
+	return Object.entries(files).map(([name, node]) => {
+		const contents = node.file.contents;
+		return {
+			name,
+			contents: typeof contents === 'string' ? contents : new TextDecoder().decode(contents)
+		};
+	});
+}

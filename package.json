@@ -11,7 +11,7 @@
 		"access": "public"
 	},
 	"scripts": {
-		"dev:client": "vite dev --host --open",
+		"dev:client": "vite dev --host",
 		"dev:server": "npx convex dev",
 		"dev": "concurrently --kill-others --prefix-colors red,yellow --names \"svelte,convex\" \"pnpm dev:client\" \"pnpm dev:server\"",
 		"build": "vite build && npm run prepack",
@@ -130,6 +130,7 @@
 		}
 	},
 	"dependencies": {
+		"@sveltejs/kit": "^2.53.0",
 		"@battlefieldduck/xterm-svelte": "^2.2.1",
 		"@codemirror/lang-javascript": "^6.2.4",
 		"@codemirror/state": "^6.5.4",
@@ -138,6 +139,7 @@
 		"@liveblocks/yjs": "^3.14.0",
 		"@lucide/svelte": "^0.575.0",
 		"@mmailaender/convex-better-auth-svelte": "^0.5.1",
+		"@monaco-editor/loader": "^1.7.0",
 		"@webcontainer/api": "^1.6.1",
 		"@xterm/xterm": "^6.0.0",
 		"bits-ui": "^2.16.0",

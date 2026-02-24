@@ -20,9 +20,15 @@
 </div>
 
 <style>
+	:global(body) {
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+	}
+
 	.ide-grid {
 		display: grid;
-		grid-template-columns: 1fr 1fr; /* Two equal columns */
+		grid-template-columns: 1fr 1fr;
 		height: 100vh;
 		width: 100vw;
 		background-color: #1e1e1e;
@@ -31,24 +37,26 @@
 
 	.code-column {
 		display: grid;
-		grid-template-rows: 2fr 1fr; /* Editor gets more space than terminal */
-		border-right: 1px solid #333;
+		grid-template-rows: 2fr 1fr;
+		border-right: 1px solid #2d2d2d;
 		min-height: 0;
+		overflow: hidden;
 	}
 
 	.editor-pane {
-		border-bottom: 1px solid #333;
+		border-bottom: 1px solid #2d2d2d;
 		min-height: 0;
-		position: relative;
+		overflow: hidden;
 	}
 
 	.terminal-pane {
 		min-height: 0;
-		position: relative;
+		overflow: hidden;
 	}
 
 	.preview-column {
 		min-height: 0;
-		background: #ffffff; /* Typically preview has a light background */
+		overflow: hidden;
+		/* Let Preview.svelte own its own background — no override here */
 	}
 </style>

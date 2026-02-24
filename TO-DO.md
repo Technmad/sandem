@@ -1,91 +1,128 @@
-# WebContainer & Terminal Integration To‑Do
+# Sandem — To-Do
 
-> Build verified 2026‑02‑24: `pnpm run build` completes with only chunk-size warnings; CI commands (`check`, `format`, `lint`) all pass.
-
-> The list below has been revised to reflect the current implementation and to drive the project toward a fully‑featured, StackBlitz‑style in‑browser IDE. Completed items are checked, remaining work is grouped by phase.
+> Last verified: 2026-02-25 · `pnpm build` passes · all CI checks green
 
 ---
 
-## ✅ Phase 1: Infrastructure & Security (complete)
+## ✅ Done
 
-- [x] Install runtime dependencies (`@webcontainer/api`, `xterm`, `@xterm/addon-fit`).
-- [x] Add COOP/COEP headers in `vite.config.ts` and `src/hooks.server.ts` (dev & prod).
-- [x] `.gitignore` updated to exclude `.env.local` and other sensitive files.
+### Infrastructure
 
-## ✅ Phase 2: Terminal component (implemented)
+- [x] COOP/COEP headers in `vite.config.ts` and `hooks.server.ts` (dev + prod)
+- [x] WebContainer singleton boot guard (prevents double-boot on HMR)
+- [x] `ssr = false` on `/projects/[projectId]` layout
+- [x] `.gitignore` covers `.env.local` and generated files
 
-- [x] `src/lib/components/Terminal.svelte` built using `@battlefieldduck/xterm-svelte`.
-- [x] Handles resizing, opens a `jsh` shell, pipes I/O, and exposes rows/cols for process resizing.
-- [x] No manual `bind:this` needed; component interface handles the instance.
+### Auth
 
-## ✅ Phase 3: Container boot logic (working)
+- [x] Email/password sign in + sign up
+- [x] GitHub OAuth via better-auth social provider
+- [x] SSR auth state handshake (`getServerState` → `createSvelteAuthClient`)
+- [x] Liveblocks auth endpoint (`/api/liveblocks-auth`) with owner/collaborator permission split
 
-- [x] Boot and mount logic lives in `/routes/ide/+page.svelte` (singleton guard prevents multiple boots).
-- [ ] **Optional refactor:** extract to a shared `src/lib/webcontainer.ts` store/helper for reuse.
+### Backend (Convex)
 
-## ✅ Phase 4: Stream connection (done)
+- [x] `projects` table schema with `by_owner` index
+- [x] `createProject`, `getProject`, `listProjects`, `updateProject`, `deleteProject`
+- [x] `getProjectByRoomId` for Liveblocks auth
+- [x] `getCurrentUser` query
 
-- [x] Shell spawned in `Terminal.svelte` with rows/cols sync.
-- [x] Container output is written to xterm; keystrokes forward to container input.
+### File system sync
 
-## ✅ Phase 5: Liveblocks‑powered editor (done)
+- [x] `VITE_REACT_TEMPLATE` uses flat `{ name, contents }[]` format matching Convex schema
+- [x] `projectFilesToFSTree()` converts flat array → WebContainer `FileSystemTree`
+- [x] Correct boot sequence: boot → fetch project → mount → render
+- [x] `webcontainer.mount()` seeds FS from Convex on load
+- [x] `wc.fs.writeFile()` keeps FS live on every editor change
 
-- [x] `Editor.svelte` initializes Monaco, binds multiple models to a Liveblocks/Yjs room.
-- [x] On sync, database contents seed the document.
-- [x] Model changes trigger debounced Convex save and immediate `webcontainer.fs.writeFile` for HMR.
-- [x] Active file switching works, autosave indicator present.
+### Editor
 
-## ✅ Phase 6: Preview iframe (done)
+- [x] Monaco Editor with multi-file tab switching
+- [x] Liveblocks + Yjs real-time collaboration
+- [x] Yjs seeding from Convex on first sync (only if doc is empty)
+- [x] Local-only autosave (skips remote Yjs changes via origin check)
+- [x] Offline mode (no Liveblocks room) falls back to direct Monaco models
+- [x] Language detection by file extension
 
-- [x] `Preview.svelte` runs `npm install` then `npm run dev` inside the container.
-- [x] Listens for `server-ready` events and updates `iframeUrl`.
+### Terminal
 
-## ✅ Phase 7: Documentation & cleanup (partial)
+- [x] xterm.js via `@battlefieldduck/xterm-svelte`
+- [x] `jsh` shell with resize sync
+- [x] Input/output piping
 
-- [x] Add WebContainer setup notes to `README.md`.
-- [ ] Add Docker and docker-compose instructions to README and create `README.Docker.md`.
-- [ ] Document new UI component library and theming system (buttons, cards, theme switcher, layout primitives).
-- [ ] Explain semantic token architecture and theme variants (`default`, `forest`, `solar`, `ocean`, light/dark modes).
-- [ ] Remove remaining `console.log` debugging and temporary comments.
-- [x] Confirmed `.gitignore` already covers new files.
+### Preview
 
----
+- [x] `server-ready` listener for iframe URL
+- [x] Reload button (`{#key}` remount trick)
+- [x] Open-in-new-tab link
+- [x] Duplicate listener guard
 
-## 🚀 Phase 8: UI library & theming enhancements
+### UI / Pages
 
-This phase covers the expanding design system that now lives alongside the IDE features.
-
-- [ ] Consolidate component props and ensure all new UI bits use Svelte 5 runes.
-- [ ] Add `Accordion`, `Avatar`, `DropDown`, `Grid`, `MenuBar`, `Search`, `Tab`/`Tabs`, etc.
-- [ ] Build a live component catalog page for previewing variants and themes (now implemented as `/docs/theme`).
-- [ ] Expose a global `ThemeSwitcher` panel and add `ModeToggle` for light/dark mode.
-- [ ] Create documentation for token layers (primitive vs semantic) and how to add a new theme.
-- [ ] Implement persistent theme choice and default based on system preference.
-- [ ] Hook theme variables into Storybook or similar visual explorer (optional).
-
----
-
-## 🚀 Phase 9: StackBlitz‑level feature roadmap
-
-These are the high‑value enhancements required to transform Sandem into a production‑quality online IDE.
-
-- [ ] **File explorer/tree view** – display, add, delete, rename files and folders.
-- [ ] **Template gallery** – choose from React, Vue, Svelte, plain HTML, etc.
-- [ ] **Import/export** – download a ZIP, push/pull from GitHub URLs.
-- [ ] **Workspace snapshots** – reset container, take/restore snapshots, clone sharable sessions.
-- [ ] **Package.json editor / dependency manager** – UI for editing dependencies with auto‑install.
-- [ ] **Custom run/test commands** – allow users to run arbitrary `npm` scripts and view results.
-- [ ] **Sharing & deep links** – create guest links that spin up a project without auth.
-- [ ] **Monaco IntelliSense & LSP** – enable language servers, auto‑completion, error underlining.
-- [ ] **Collaborative cursors & user list** – surface who’s in the room and show their cursors.
-- [ ] **Error overlays & console logs** – surface compile/runtime errors outside of the terminal.
-- [ ] **Resource monitoring** – warn on container OOM or high CPU/memory usage.
-- [ ] **Prod build preview** – add a "Build" button and show `/dist` output in iframe.
-- [ ] **Responsive/mobile layout** – ensure panes work on narrow screens.
-- [ ] **Accessibility audit** – keyboard navigation for tabs, file tree, and panes.
-- [ ] **E2E tests** – add Playwright (or equivalent) for full‑stack integration scenarios.
-- [ ] **CI/CD & deploy notes** – verify headers and container build on target hosts.
+- [x] Home page — editorial dark landing with faux IDE window hero
+- [x] Auth page — split-panel sign in / sign up with GitHub button
+- [x] Projects dashboard — project grid, skeleton loading, ghost new-project card
+- [x] IDE page — editor / terminal / preview 3-pane layout
+- [x] Global `transition: all` removed from `*` (was breaking Monaco + xterm)
+- [x] `body:has(.ide-grid)` override keeps IDE always dark
+- [x] `app.css` semantic token system (4 themes × 2 modes)
 
 ---
 
-> 📝 Progress tip: complete the refactor in Phase 3 first – a clean shared container API makes many of the Phase 9 tasks easier.
+## 🔧 Needs fixing / polish
+
+- [ ] **Delete confirmation** — project delete fires immediately on click; add an "are you sure?" step
+- [ ] **Project rename** — inline rename on the dashboard card (double-click title)
+- [ ] **Error boundary** in IDE layout — unhandled WebContainer errors should show a recoverable UI, not a blank screen
+- [ ] **`console.log` cleanup** — remove `$inspect()` calls and debug logs before any public release
+- [ ] **Liveblocks room creation** — `liveblocksRoomId` is currently optional and often null; wire up automatic room creation on project create
+- [ ] **`useFilesystem.mountProjectFiles()`** — this method exists but is unused; the layout handles mounting directly; either remove it or use it
+
+---
+
+## 🚀 Next features
+
+### File explorer
+
+- [ ] Sidebar file tree (add, delete, rename files/folders)
+- [ ] New file from template (`.tsx`, `.css`, etc.)
+- [ ] File path support in editor tabs (currently flat names only)
+
+### Editor enhancements
+
+- [ ] Monaco IntelliSense / TypeScript LSP
+- [ ] Collaborative cursors with user avatars
+- [ ] Find & replace panel
+- [ ] Editor font size / settings panel
+
+### Templates
+
+- [ ] Template picker on project create (React, Vue, Svelte, plain Node, etc.)
+- [ ] Import from GitHub URL
+- [ ] Export as ZIP
+
+### Workspace
+
+- [ ] Container snapshot / restore
+- [ ] Clone project
+- [ ] Guest share links (no auth required to view)
+- [ ] Custom run commands (not just `npm run dev`)
+- [ ] `npm` package manager UI
+
+### Infrastructure
+
+- [ ] Docker + docker-compose docs (`README.Docker.md`)
+- [ ] CI pipeline (lint → check → build → deploy)
+- [ ] E2E tests (Playwright) covering auth, project create, editor load
+- [ ] Accessibility audit (keyboard nav for tabs, file tree, panes)
+- [ ] Mobile / responsive layout for IDE panes
+
+---
+
+## 💡 Icebox (good ideas, not soon)
+
+- Prod build button (`npm run build` → serve `/dist` in iframe)
+- Resource monitor (warn on container OOM)
+- Error overlay surfacing compile errors outside the terminal
+- Storybook / component catalog for the UI library
+- Visual regression tests for theme variants
