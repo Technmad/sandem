@@ -91,7 +91,7 @@ src/
 │   └── http.ts           # auth HTTP routes
 ├── lib/
 │   ├── components/
-│   │   └── ide/          # Editor, Terminal, Preview, Tabs
+│   │                     # Editor, Terminal, Preview, Tabs
 │   ├── hooks/            # useAutoSave, useFilesystem, usePreview, useShellProcess
 │   └── utils/            # ide-context, auth-client, filesystem-utils, templates
 └── routes/
