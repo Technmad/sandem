@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { authClient } from '$lib/utils/auth-client.js';
+	import { authClient } from '$lib/hooks/auth-client.js';
 	import { api } from '$convex/_generated/api.js';
 	import { useQuery } from 'convex-svelte';
 	import { useAuth } from '$lib/svelte/index.js';
@@ -17,13 +17,6 @@
 		() => ({ initialData: data.currentUser, keepPreviousData: true })
 	);
 	let user = $derived(currentUserResponse.data);
-
-	// Redirect authenticated users to dashboard
-	$effect(() => {
-		if (isAuthenticated && !isLoading) {
-			goto('/projects');
-		}
-	});
 
 	let showSignIn = $state(true);
 	let name = $state('');

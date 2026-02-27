@@ -1,73 +1,229 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	/*
+	 * Each theme entry: the key stored in localStorage/data-theme,
+	 * plus a sample color for the dot swatch.
+	 * The `light` and `dark` swatches represent the mid-surface (--mg)
+	 * of each theme so the dot is visually representative.
+	 */
+	const themes: { id: string; label: string; light: string; dark: string }[] = [
+		{ id: 'default', label: 'Default', light: 'hsl(0 0% 90%)', dark: 'hsl(0 0% 8%)' },
+		{ id: 'abyss', label: 'Abyss', light: 'hsl(215 28% 94%)', dark: 'hsl(222 42% 7%)' },
+		{ id: 'forest', label: 'Forest', light: 'hsl(130 28% 91%)', dark: 'hsl(130 38% 8%)' },
+		{ id: 'solar', label: 'Solar', light: 'hsl(38 50% 91%)', dark: 'hsl(22 52% 10%)' },
+		{ id: 'ocean', label: 'Ocean', light: 'hsl(205 40% 91%)', dark: 'hsl(218 54% 9%)' },
+		{ id: 'rose', label: 'Rose', light: 'hsl(340 30% 92%)', dark: 'hsl(340 38% 8%)' },
+		{ id: 'midnight', label: 'Midnight', light: 'hsl(255 25% 93%)', dark: 'hsl(252 42% 8%)' }
+	];
+
 	let currentTheme = $state('default');
-	const themes = ['default', 'forest', 'solar', 'ocean'];
+	let currentMode = $state<'light' | 'dark'>('dark');
+	let popoverOpen = $state(false);
 
 	onMount(() => {
 		const savedTheme = localStorage.getItem('theme');
-		if (savedTheme && themes.includes(savedTheme)) {
+		const savedMode = localStorage.getItem('mode') as 'light' | 'dark' | null;
+
+		if (savedTheme && themes.some((t) => t.id === savedTheme)) {
 			currentTheme = savedTheme;
-		} else {
-			document.documentElement.setAttribute('data-theme', currentTheme);
 		}
+		if (savedMode) {
+			currentMode = savedMode;
+		}
+
+		// Listen for mode changes from ModeToggle
+		const observer = new MutationObserver(() => {
+			const mode = document.documentElement.getAttribute('data-mode') as 'light' | 'dark' | null;
+			if (mode && mode !== currentMode) {
+				currentMode = mode;
+			}
+		});
+
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-mode']
+		});
+		return () => observer.disconnect();
 	});
 
 	$effect(() => {
 		document.documentElement.setAttribute('data-theme', currentTheme);
 		localStorage.setItem('theme', currentTheme);
 	});
+
+	function select(id: string) {
+		currentTheme = id;
+		popoverOpen = false;
+	}
+
+	function getSwatchColor(theme: (typeof themes)[0]) {
+		return currentMode === 'dark' ? theme.dark : theme.light;
+	}
+
+	// Close on outside click
+	function onKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') popoverOpen = false;
+	}
 </script>
 
-<div class="switcher-wrapper">
-	<label for="theme-select">Active Theme</label>
-	<select id="theme-select" bind:value={currentTheme} class="theme-select">
-		{#each themes as theme}
-			<option value={theme}>{theme.toUpperCase()}</option>
-		{/each}
-	</select>
+<svelte:window onkeydown={onKeydown} />
+
+<div class="theme-switcher">
+	<button
+		class="swatch-trigger"
+		onclick={() => (popoverOpen = !popoverOpen)}
+		aria-label="Switch theme"
+		aria-expanded={popoverOpen}
+		aria-haspopup="listbox"
+		title="Switch theme"
+	>
+		<!-- Active theme dot -->
+		<span
+			class="swatch-dot active-dot"
+			style:background={getSwatchColor(themes.find((t) => t.id === currentTheme)!)}
+		></span>
+	</button>
+
+	{#if popoverOpen}
+		<!-- Invisible backdrop to catch outside clicks -->
+		<div class="popover-backdrop" role="presentation" onclick={() => (popoverOpen = false)}></div>
+
+		<div class="popover" role="listbox" aria-label="Theme options">
+			{#each themes as theme}
+				<button
+					class="swatch-item"
+					class:current={theme.id === currentTheme}
+					role="option"
+					aria-selected={theme.id === currentTheme}
+					onclick={() => select(theme.id)}
+					title={theme.label}
+				>
+					<span class="swatch-dot" style:background={getSwatchColor(theme)}></span>
+					<span class="swatch-label">{theme.label}</span>
+					{#if theme.id === currentTheme}
+						<span class="check" aria-hidden="true">✓</span>
+					{/if}
+				</button>
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>
-	.switcher-wrapper {
+	.theme-switcher {
+		position: relative;
+	}
+
+	/* ── Trigger button — just a colored dot ─────────────────── */
+	.swatch-trigger {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border);
+		background: var(--fg);
+		cursor: pointer;
+		transition:
+			border-color var(--time) var(--ease),
+			background-color var(--time) var(--ease);
+	}
+
+	.swatch-trigger:hover {
+		border-color: var(--glint);
+		background: var(--mg);
+	}
+
+	/* ── Swatch dot ──────────────────────────────────────────── */
+	.swatch-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		display: inline-block;
+		flex-shrink: 0;
+		border: 1px solid var(--border);
+	}
+
+	.active-dot {
+		width: 12px;
+		height: 12px;
+	}
+
+	/* ── Backdrop ────────────────────────────────────────────── */
+	.popover-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 199;
+	}
+
+	/* ── Popover ─────────────────────────────────────────────── */
+	.popover {
+		position: absolute;
+		top: calc(100% + 0.5rem);
+		right: 0;
+		z-index: 200;
+		min-width: 160px;
+		background: var(--fg);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow);
+		padding: 0.375rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
-		align-items: flex-start;
+		gap: 1px;
+		/* Animate in */
+		animation: popover-in var(--time) var(--ease-out) both;
 	}
 
-	label {
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--muted);
+	@keyframes popover-in {
+		from {
+			opacity: 0;
+			transform: translateY(-4px) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
 	}
 
-	.theme-select {
-		appearance: none;
-		padding: 0.75rem 1.25rem;
-		padding-right: 2.5rem;
-		border-radius: var(--radius);
-		border: 1px solid var(--border);
-		background-color: var(--mg);
-		color: var(--text);
-		font-weight: 500;
+	/* ── Swatch items inside popover ──────────────────────────── */
+	.swatch-item {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.45rem 0.6rem;
+		border-radius: var(--radius-sm);
+		width: 100%;
+		background: transparent;
+		border: none;
 		cursor: pointer;
-		transition: all var(--time) var(--ease);
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-		background-repeat: no-repeat;
-		background-position: right 0.75rem center;
-		background-size: 1rem;
+		font-size: 0.78rem;
+		color: var(--muted);
+		transition:
+			background-color var(--time) var(--ease),
+			color var(--time) var(--ease);
 	}
 
-	.theme-select:hover {
-		border-color: var(--accent);
-		background-color: var(--fg);
+	.swatch-item:hover {
+		background: var(--mg);
+		color: var(--text);
 	}
 
-	.theme-select:focus {
-		outline: none;
-		box-shadow: 0 0 0 2px var(--highlight);
+	.swatch-item.current {
+		color: var(--text);
+		font-weight: 600;
+	}
+
+	.swatch-label {
+		flex: 1;
+		text-align: left;
+	}
+
+	.check {
+		font-size: 0.7rem;
+		color: var(--accent);
+		margin-left: auto;
 	}
 </style>

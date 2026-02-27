@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getIDEContext } from '$lib/utils/ide-context.js';
-	import { usePreview } from '$lib/hooks/usePreview.svelte.js';
+	import { usePreview } from '$lib/hooks/createPreview.svelte.js';
 
 	const ide = getIDEContext();
 	const preview = usePreview(ide.getWebcontainer);

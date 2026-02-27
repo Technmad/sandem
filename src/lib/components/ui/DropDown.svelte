@@ -105,7 +105,7 @@
 	.menu-inner {
 		background: var(--bg); /* */
 		border: 1px solid var(--border); /* */
-		border-radius: var(--radius-lg); /* Using larger radius for the menu */
+		border-radius: var(--radius-md); /* Using radius-md for the menu */
 		padding: 0.25rem;
 		overflow: hidden;
 	}
@@ -138,13 +138,13 @@
 		padding: 0.6rem 0.8rem;
 		font-size: 0.875rem;
 		color: var(--text);
-		border-radius: var(--radius-base);
+		border-radius: var(--radius-sm);
 		text-align: left;
 		transition: background var(--time);
 	}
 
 	:global(.menu-inner button:hover) {
-		background: var(--bg);
+		background: var(--mg);
 		color: var(--accent);
 	}
 </style>

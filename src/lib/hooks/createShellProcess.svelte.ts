@@ -1,8 +1,9 @@
+// src/lib/hooks/createShellProcess.svelte.ts
 import { XtermAddon } from '@battlefieldduck/xterm-svelte';
 import type { Terminal } from '@battlefieldduck/xterm-svelte';
 import type { WebContainer, WebContainerProcess } from '@webcontainer/api';
 
-export function useShellProcess(getWebcontainer: () => WebContainer) {
+export function createShellProcess(getWebcontainer: () => WebContainer) {
 	let shellProcess: WebContainerProcess | undefined;
 	let shellInput: WritableStreamDefaultWriter<string> | undefined;
 
@@ -34,8 +35,16 @@ export function useShellProcess(getWebcontainer: () => WebContainer) {
 	}
 
 	function writeInput(data: string) {
-		if (shellInput) shellInput.write(data);
+		shellInput?.write(data);
 	}
 
-	return { initShell, writeInput };
+	/** Kill the shell process — call from onDestroy. */
+	function killShell() {
+		shellInput?.close().catch(() => {});
+		shellProcess?.kill();
+		shellProcess = undefined;
+		shellInput = undefined;
+	}
+
+	return { initShell, writeInput, killShell };
 }

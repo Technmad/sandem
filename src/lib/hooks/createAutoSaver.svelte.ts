@@ -1,3 +1,4 @@
+// src/lib/hooks/createAutoSaver.svelte.ts
 import { useConvexClient } from 'convex-svelte';
 import { api } from '$convex/_generated/api.js';
 import type { Doc } from '$convex/_generated/dataModel.js';
@@ -35,7 +36,7 @@ export function createAutoSaver(getProject: () => Doc<'projects'> | undefined) {
 			saveStatus = 'Saved';
 		} catch (err) {
 			console.error('Save failed', err);
-			// Re-queue failed saves so they retry on next trigger
+			// Re-queue failed saves — don't overwrite if a newer save came in during the flight
 			snapshot.forEach((content, fileName) => {
 				if (!pendingSaves.has(fileName)) {
 					pendingSaves.set(fileName, content);
@@ -45,20 +46,15 @@ export function createAutoSaver(getProject: () => Doc<'projects'> | undefined) {
 		}
 	}
 
-	/**
-	 * Call this ONLY from local user input changes (not remote Yjs syncs).
-	 */
+	/** Call only on local user input (not remote Yjs syncs). */
 	function triggerAutoSave(fileName: string, content: string) {
 		saveStatus = 'Unsaved changes';
 		pendingSaves.set(fileName, content);
-
 		clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(flushPendingSaves, 1500);
 	}
 
-	/**
-	 * Force an immediate save — useful on tab switch or beforeunload.
-	 */
+	/** Force an immediate save — useful on tab switch or beforeunload. */
 	async function forceSave(fileName: string, content: string) {
 		pendingSaves.set(fileName, content);
 		clearTimeout(saveTimeout);

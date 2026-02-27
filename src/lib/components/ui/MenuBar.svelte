@@ -22,7 +22,7 @@
 	} = $props();
 </script>
 
-<div
+<menu
 	class="menubar"
 	{role}
 	aria-label={ariaLabel}
@@ -34,19 +34,19 @@
 		<div class="legend">{@render legend()}</div>
 	{/if}
 
-	<div class="content">
+	<li class="content">
 		{@render children?.()}
-	</div>
+	</li>
 
 	{#if actions}
-		<div class="actions">
+		<li class="actions">
 			{@render actions()}
-		</div>
+		</li>
 	{/if}
-</div>
+</menu>
 
 <style>
-	.menubar {
+	menu {
 		display: flex;
 		align-items: center;
 		gap: var(--gap);
@@ -57,8 +57,7 @@
 		--icon-color: var(--muted);
 	}
 
-	.content,
-	.actions {
+	li {
 		display: flex;
 		align-items: center;
 		gap: var(--gap);

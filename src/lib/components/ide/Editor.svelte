@@ -7,9 +7,10 @@
 	import { LiveblocksYjsProvider } from '@liveblocks/yjs';
 	import type * as Monaco from 'monaco-editor';
 
-	import { getIDEContext } from '$lib/utils/ide-context.js';
-	import { createAutoSaver } from '$lib/hooks/useAutoSave.svelte.js';
-	import { useFilesystem } from '$lib/hooks/useFileSystem.svelte.js';
+	import { getIDEContext } from '$lib/context/ide.js';
+	import { createAutoSaver } from '$lib/hooks/createAutoSaver.svelte.js';
+	import { createFileWriter } from '$lib/hooks/createFileWriter.svelte.js';
+	import { getMonacoLanguage } from '$lib/utils/language.js';
 	import type { Awareness } from 'y-protocols/awareness.js';
 
 	interface FileBinding {
@@ -28,7 +29,7 @@
 	let activeFile = $state(untrack(() => project.entry || project.files[0].name));
 
 	const autoSaver = createAutoSaver(() => project);
-	const filesystem = useFilesystem(ide.getWebcontainer, () => project);
+	const { writeFile } = createFileWriter(ide.getWebcontainer);
 
 	let provider: LiveblocksYjsProvider;
 	let ydoc: Y.Doc;
@@ -54,13 +55,12 @@
 			padding: { top: 10 }
 		});
 
-		if (!project.liveblocksRoomId) {
-			// Offline / no collab mode: just load files directly into Monaco models
+		if (!project.room) {
 			setupOfflineModels();
 			return;
 		}
 
-		const { room, leave } = client.enterRoom(project.liveblocksRoomId, {
+		const { room, leave } = client.enterRoom(project.room, {
 			initialPresence: { cursor: null }
 		});
 		leaveRoom = leave;
@@ -68,19 +68,15 @@
 		ydoc = new Y.Doc();
 		provider = new LiveblocksYjsProvider(room, ydoc);
 
-		// Wait for the Yjs provider to finish its initial sync before we
-		// decide whether to seed content from Convex.
 		provider.on('sync', (isSynced: boolean) => {
 			if (!isSynced || yjsSynced) return;
 			yjsSynced = true;
 			seedYjsFromConvex();
 		});
 
-		// Build Monaco models and bindings for every project file
 		for (const file of project.files) {
 			const yText = ydoc.getText(file.name);
-			// Create model with no initial content — Yjs owns the content
-			const model = monacoInstance.editor.createModel('', getLanguage(monacoInstance, file.name));
+			const model = monacoInstance.editor.createModel('', getMonacoLanguage(file.name));
 			const binding = new MonacoBinding(
 				yText,
 				model,
@@ -93,51 +89,36 @@
 			});
 		}
 
-		// Show the active file
 		swapToFile(activeFile);
 
-		// Only save on local changes. We detect "local" by checking yjsSynced
-		// and using a per-model origin guard via Yjs transactions.
 		ydoc.on('update', (_update: Uint8Array, origin: unknown) => {
-			// origin is null for local changes, a string/object for remote
 			if (!yjsSynced) return;
 			if (origin !== null) return; // remote change — skip
 			const content = ydoc.getText(activeFile).toString();
 			autoSaver.triggerAutoSave(activeFile, content);
-			// Keep WebContainer in sync immediately (no debounce needed, FS write is cheap)
-			filesystem.writeFile(activeFile, content);
+			writeFile(activeFile, content);
 		});
 	});
 
-	/**
-	 * Seeds Yjs text from Convex project data for files that are still empty
-	 * (i.e. brand-new rooms with no prior Yjs history).
-	 */
 	function seedYjsFromConvex() {
 		ydoc.transact(() => {
 			for (const file of project.files) {
 				if (seededFiles.has(file.name)) continue;
 				const yText = ydoc.getText(file.name);
-				// Only write if the Yjs doc is completely empty for this file —
-				// if there's already content it means a prior session saved it.
 				if (yText.length === 0 && file.contents) {
 					yText.insert(0, file.contents);
 				}
 				seededFiles.add(file.name);
 			}
-		}, 'seed'); // 'seed' origin — will be ignored by the update listener above
+		}, 'seed'); // 'seed' origin is ignored by the update listener
 	}
 
-	/**
-	 * Offline mode: load Convex content directly into Monaco models.
-	 */
 	function setupOfflineModels() {
 		for (const file of project.files) {
 			const model = monacoInstance.editor.createModel(
 				file.contents ?? '',
-				getLanguage(monacoInstance, file.name)
+				getMonacoLanguage(file.name)
 			);
-			// Use a thin wrapper so the rest of the code can still use `bindings`
 			bindings.set(file.name, { monacoModel: model, destroy: () => model.dispose() });
 		}
 		swapToFile(activeFile);
@@ -145,41 +126,22 @@
 		editor.onDidChangeModelContent(() => {
 			const content = editor.getValue();
 			autoSaver.triggerAutoSave(activeFile, content);
-			filesystem.writeFile(activeFile, content);
+			writeFile(activeFile, content);
 		});
 	}
 
 	function swapToFile(fileName: string) {
 		if (!editor) return;
-
 		const binding = bindings.get(fileName);
 		if (!binding) return;
-
-		const targetModel = binding.monacoModel;
-		if (editor.getModel() !== targetModel) {
-			editor.setModel(targetModel);
+		if (editor.getModel() !== binding.monacoModel) {
+			editor.setModel(binding.monacoModel);
 		}
 	}
 
-	// React to tab switches — force-save the outgoing file first
 	$effect(() => {
 		swapToFile(activeFile);
 	});
-
-	function getLanguage(m: typeof Monaco, fileName: string): string {
-		const ext = fileName.split('.').pop() ?? '';
-		const map: Record<string, string> = {
-			js: 'javascript',
-			jsx: 'javascript',
-			ts: 'typescript',
-			tsx: 'typescript',
-			html: 'html',
-			css: 'css',
-			json: 'json',
-			md: 'markdown'
-		};
-		return map[ext] ?? 'plaintext';
-	}
 
 	onDestroy(() => {
 		autoSaver.cleanup();

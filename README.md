@@ -92,7 +92,7 @@ src/
 ├── lib/
 │   ├── components/
 │   │   └── ide/          # Editor, Terminal, Preview, Tabs
-│   ├── hooks/            # useAutoSave, useFilesystem, usePreview, useShellProcess
+│   ├── hooks/            # useAutoSave, useProjectMounter, useFileWriter, usePreview, useShellProcess (former useFilesystem)
 │   └── utils/            # ide-context, auth-client, filesystem-utils, templates
 └── routes/
     ├── (home)/           # Landing page

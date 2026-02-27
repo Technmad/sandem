@@ -5,7 +5,7 @@
 		ITerminalInitOnlyOptions,
 		Terminal
 	} from '@battlefieldduck/xterm-svelte';
-	import { useShellProcess } from '$lib/hooks/useShellProcess.svelte.js';
+	import { useShellProcess } from '$lib/hooks/createShellProcess.svelte.js';
 	import { getIDEContext } from '$lib/utils/ide-context.js';
 
 	const ide = getIDEContext();

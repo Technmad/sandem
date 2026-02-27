@@ -10,16 +10,30 @@ const liveblocks = new Liveblocks({
 	secret: LIVEBLOCKS_SECRET_KEY
 });
 
-const convex = new ConvexHttpClient(PUBLIC_CONVEX_URL);
+// NOTE: create a new ConvexHttpClient for each request to avoid
+// concurrency issues.  A shared client would have its auth token
+// overwritten by concurrent requests, leading to possible data leaks.
+// We instantiate below inside POST.
 
 export async function POST({ locals, request }: RequestEvent): Promise<Response> {
 	try {
 		const { room } = await request.json();
+		if (room) {
+			if (typeof room !== 'string') {
+				return new Response('Invalid room ID type', { status: 400 });
+			}
+			if (room.trim().length === 0) {
+				return new Response('Room ID cannot be empty', { status: 400 });
+			}
+		}
 
 		if (!locals.token) {
 			return new Response('Unauthorized - No Token', { status: 401 });
 		}
 
+		// create fresh client for every POST invocation to prevent tokens
+		// from leaking between concurrent requests
+		const convex = new ConvexHttpClient(PUBLIC_CONVEX_URL);
 		convex.setAuth(locals.token);
 		const user = await convex.query(api.auth.getCurrentUser);
 
@@ -36,15 +50,21 @@ export async function POST({ locals, request }: RequestEvent): Promise<Response>
 		});
 
 		if (room) {
-			// FIX: Fetch the project from Convex using the Room ID
-			const project = await convex.query(api.projects.getProjectByRoomId, { roomId: room });
-			if (project) {
-				const isOwner = project.ownerId === user._id;
-				session.allow(room, isOwner ? session.FULL_ACCESS : ['room:read', 'room:presence:write']);
-			} else {
-				// If project doesn't exist, you might want to deny access or allow read-only
-				session.allow(room, ['room:read']);
+			// look up project by collaboration room
+			const project = await convex.query(api.projects.openCollab, {
+				room,
+				owner: user._id
+			});
+			if (!project) {
+				// no such project or not accessible by this user
+				return new Response('Room not found or access denied', { status: 403 });
 			}
+
+			const isOwner = project.owner === user._id;
+			const permissions = isOwner
+				? ['room:write', 'room:presence:write', 'room:comments:write']
+				: ['room:read', 'room:presence:write'];
+			session.allow(room, permissions);
 		}
 
 		const { status, body } = await session.authorize();

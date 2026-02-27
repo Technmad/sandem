@@ -1,230 +1,332 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import ModeToggle from '$lib/components/colors/ModeToggle.svelte';
-	import Search from '$lib/components/ui/Search.svelte';
+	import { page } from '$app/state';
+	import type { Snippet } from 'svelte';
+
 	import Button from '$lib/components/ui/Button.svelte';
+	import ModeToggle from '../colors/ModeToggle.svelte';
+	import ThemeSwitcher from '../colors/ThemeSwitcher.svelte';
+	import Menu from 'lucide-svelte/icons/menu';
+	import X from 'lucide-svelte/icons/x';
+	import { form } from '$app/server';
 
-	let { variant = 'standard', brandName = 'convex-svelte', links = [] } = $props();
+	let {
+		variant = 'standard',
+		links = [],
+		brand,
+		field,
+		actions
+	}: {
+		/**
+		 * standard   — sticky, full-width, bg-surface, border-bottom
+		 * floating   — fixed pill that hovers above content, glass backdrop
+		 * borderless — sticky, fully transparent, no border
+		 */
+		variant?: 'standard' | 'floating' | 'borderless';
+		links?: { path: string; label: string }[];
+		field?: Snippet;
+		brand?: Snippet;
+		actions?: Snippet;
+	} = $props();
 
-	let searchQuery = $state('');
-	let showMobileMenu = $state(false);
+	const isActive = (path: string) => page.url.pathname === path;
 
-	// Helper to check active route
-	const isActive = (path: string) => $page.url.pathname === path;
+	let mobileOpen = $state(false);
+	const toggleMobile = () => (mobileOpen = !mobileOpen);
+	const closeMobile = () => (mobileOpen = false);
 </script>
 
-<header class="navbar" data-variant={variant}>
-	{#if variant === 'standard'}
-		<nav class="container">
-			<div class="left">
-				<a href="/" class="brand">{brandName}</a>
-				<ul class="nav-links">
-					{#each links as link}
-						<li>
-							<a href={link.path} class="nav-link" class:active={isActive(link.path)}>
-								{link.label}
-							</a>
-						</li>
-					{/each}
-				</ul>
-			</div>
+<!-- Floating variant renders a positioned wrapper -->
+{#if variant === 'floating'}
+	<div class="floating-track" aria-hidden="true"></div>
+{/if}
 
-			<div class="right">
-				<div class="search-box">
-					<Search bind:value={searchQuery} placeholder="Quick search..." />
-				</div>
-				<ModeToggle />
-				<Button
-					variant="outline"
-					size="sm"
-					class="mobile-toggle"
-					onclick={() => (showMobileMenu = !showMobileMenu)}
-				>
-					Menu
-				</Button>
-			</div>
+<header class="navbar" data-variant={variant} aria-label="Main navigation">
+	<div class="navbar-inner">
+		<!-- ── Brand ── -->
+		<div class="nav-brand">
+			<Button variant="link" href="/" onclick={closeMobile}>
+				{#if brand}
+					{@render brand()}
+				{:else}
+					<span class="brand-wordmark">sandem</span>
+				{/if}
+			</Button>
+		</div>
+
+		<!-- ── Desktop links ── -->
+		<nav class="nav-links" aria-label="Site links">
+			<ul>
+				{#each links as link}
+					<li>
+						<Button variant="link" href={link.path} active={isActive(link.path)}>
+							{link.label}
+						</Button>
+					</li>
+				{/each}
+			</ul>
 		</nav>
-	{:else}
-		<nav class="ide-bar">
-			<div class="ide-left">
-				<button class="ide-icon-btn" title="Site Menu">
-					<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-						<path d="M1 3h14v2H1V3zm0 4h14v2H1V7zm0 4h14v2H1v-2z" />
-					</svg>
-				</button>
+		<!-- ── Search bar ── -->
+		{#if field}
+			<from>
+				{@render field()}
+			</from>
+		{/if}
 
-				<div class="menu-group">
-					<button class="menu-item">File</button>
-					<button class="menu-item">Edit</button>
-					<button class="menu-item">Selection</button>
-					<button class="menu-item">View</button>
-					<button class="menu-item">Go</button>
-				</div>
-			</div>
-
-			<div class="ide-center">
-				<span class="project-name">project-main — Convex IDE</span>
-			</div>
-
-			<div class="ide-right">
-				<div class="ide-search">
-					<Search bind:value={searchQuery} placeholder="Search files..." />
-				</div>
+		<!-- ── Right-side controls ── -->
+		<div class="nav-right">
+			{#if actions}
+				<div class="nav-actions">{@render actions()}</div>
+			{/if}
+			<div class="nav-controls">
 				<ModeToggle />
+				<ThemeSwitcher />
 			</div>
+
+			<!-- Hamburger — mobile only -->
+			<button
+				class="hamburger"
+				onclick={toggleMobile}
+				aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+				aria-expanded={mobileOpen}
+				aria-controls="mobile-menu"
+			>
+				{#if mobileOpen}
+					<X size={20} strokeWidth={2} />
+				{:else}
+					<Menu size={20} strokeWidth={2} />
+				{/if}
+			</button>
+		</div>
+	</div>
+
+	<!-- ── Mobile drawer ── -->
+	{#if mobileOpen}
+		<nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
+			<ul>
+				{#each links as link}
+					<li>
+						<a href={link.path} class:active={isActive(link.path)} onclick={closeMobile}>
+							{link.label}
+						</a>
+					</li>
+				{/each}
+			</ul>
+			{#if actions}
+				<div class="mobile-actions">
+					{@render actions()}
+				</div>
+			{/if}
 		</nav>
 	{/if}
 </header>
 
+<!-- Click-outside backdrop for mobile -->
+{#if mobileOpen}
+	<div class="mobile-backdrop" role="presentation" onclick={closeMobile}></div>
+{/if}
+
 <style>
-	/* --- Base Header Styles --- */
+	/* ── Shared base ─────────────────────────────────────────────── */
 	.navbar {
 		width: 100%;
 		z-index: 100;
-		transition: all var(--time) var(--ease);
-		border-bottom: 1px solid var(--border);
 	}
 
-	/* --- Variant: Standard --- */
-	.navbar[data-variant='standard'] {
-		background: var(--bg);
-		height: 64px;
-		display: flex;
-		align-items: center;
-	}
-
-	.container {
-		max-width: 1200px;
+	.navbar-inner {
+		max-width: 1280px;
 		margin: 0 auto;
-		width: 100%;
 		padding: 0 1.5rem;
+		height: var(--navbar-height);
 		display: flex;
+		align-items: center;
 		justify-content: space-between;
-		align-items: center;
+		gap: 1.5rem;
 	}
 
-	.left,
-	.right {
+	.nav-brand {
 		display: flex;
 		align-items: center;
-		gap: 2rem;
+		flex-shrink: 0;
 	}
 
-	.brand {
+	.brand-wordmark {
+		font-size: 0.9rem;
 		font-weight: 700;
-		font-size: 1.1rem;
-		color: var(--text);
-		text-decoration: none;
 		letter-spacing: -0.02em;
+		color: var(--text);
 	}
 
-	.nav-links {
+	.nav-links ul {
 		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 		list-style: none;
+	}
+
+	.nav-right {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.nav-controls {
+		display: flex;
+		align-items: center;
 		gap: 0.5rem;
 	}
 
-	.nav-link {
-		text-decoration: none;
-		color: var(--muted);
-		font-size: 0.9rem;
-		font-weight: 500;
-		padding: 0.5rem 0.75rem;
+	.nav-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding-right: 0.5rem;
+		border-right: 1px solid var(--border);
+	}
+
+	/* ── Variant: standard ───────────────────────────────────────── */
+	.navbar[data-variant='standard'] {
+		position: sticky;
+		top: 0;
+		background-color: var(--bg);
+		border-bottom: 1px solid var(--border);
+		transition:
+			background-color var(--time) var(--ease),
+			border-color var(--time) var(--ease);
+	}
+
+	/* ── Variant: floating ───────────────────────────────────────── */
+	.floating-track {
+		height: var(--navbar-height);
+		pointer-events: none;
+	}
+
+	.navbar[data-variant='floating'] {
+		position: fixed;
+		top: 0.75rem;
+		left: 50%;
+		transform: translateX(-50%);
+		width: min(calc(100% - 2rem), 1200px);
 		border-radius: var(--radius);
-		transition: all var(--time) var(--ease);
+		border: 1px solid var(--glass-border);
+		background-color: var(--glass-bg);
+		backdrop-filter: var(--backdrop-blur);
+		-webkit-backdrop-filter: var(--backdrop-blur);
+		box-shadow: var(--shadow);
+		transition:
+			background-color var(--time) var(--ease),
+			border-color var(--time) var(--ease),
+			box-shadow var(--time) var(--ease);
 	}
 
-	.nav-link:hover,
-	.nav-link.active {
+	.navbar[data-variant='floating'] .navbar-inner {
+		padding: 0 1.25rem;
+	}
+
+	/* ── Variant: borderless ─────────────────────────────────────── */
+	.navbar[data-variant='borderless'] {
+		position: sticky;
+		top: 0;
+		background-color: transparent;
+		border-bottom: 1px solid transparent;
+	}
+
+	/* ── Hamburger button ─────────────────────────────────────────── */
+	.hamburger {
+		display: none;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: var(--radius-sm);
+		color: var(--muted);
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		transition:
+			color var(--time) var(--ease),
+			background-color var(--time) var(--ease);
+	}
+
+	.hamburger:hover {
 		color: var(--text);
-		background: var(--mg);
+		background-color: var(--mg);
 	}
 
-	.search-box {
-		width: 200px;
+	/* ── Mobile menu drawer ──────────────────────────────────────── */
+	.mobile-menu {
+		border-top: 1px solid var(--border);
+		background-color: var(--mg);
+		padding: 0.75rem 1.5rem 1.25rem;
 	}
 
-	/* --- Variant: IDE (VSCode style) --- */
-	.navbar[data-variant='ide'] {
-		background: var(--fg); /* Darker hierarchy */
-		height: 35px;
-		font-size: 0.8rem;
-	}
-
-	.ide-bar {
+	.mobile-menu ul {
 		display: flex;
-		height: 100%;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0 0.5rem;
-		position: relative;
-	}
-
-	.ide-left,
-	.ide-right {
-		display: flex;
-		align-items: center;
+		flex-direction: column;
 		gap: 0.25rem;
 	}
 
-	.ide-icon-btn {
-		background: transparent;
-		border: none;
+	.mobile-menu a {
+		display: block;
+		padding: 0.6rem 0.75rem;
+		border-radius: var(--radius-sm);
+		font-size: 0.9rem;
 		color: var(--muted);
-		padding: 4px;
-		cursor: pointer;
-		display: flex;
-		border-radius: 4px;
+		transition:
+			color var(--time) var(--ease),
+			background-color var(--time) var(--ease);
 	}
 
-	.ide-icon-btn:hover {
-		background: var(--mg);
-		color: var(--accent);
-	}
-
-	.menu-group {
-		display: flex;
-		margin-left: 0.5rem;
-	}
-
-	.menu-item {
-		background: transparent;
-		border: none;
+	.mobile-menu a:hover,
+	.mobile-menu a.active {
 		color: var(--text);
-		padding: 2px 8px;
-		border-radius: 4px;
-		cursor: pointer;
-		font-size: 0.75rem;
+		background-color: var(--fg);
 	}
 
-	.menu-item:hover {
-		background: var(--mg);
+	.mobile-menu a.active {
+		font-weight: 600;
 	}
 
-	.ide-center {
-		position: absolute;
-		left: 50%;
-		transform: translateX(-50%);
-		color: var(--muted);
-		pointer-events: none;
-		white-space: nowrap;
+	.mobile-actions {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--border);
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
-	.ide-search {
-		width: 300px;
-		transform: scale(0.9); /* Make search slightly more compact for IDE */
+	/* Click-outside overlay — invisible, captures taps */
+	.mobile-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 99;
+		background: transparent;
 	}
 
-	/* --- Responsiveness --- */
+	/* ── Responsive — hide links, show hamburger ─────────────────── */
 	@media (max-width: 768px) {
-		.nav-links,
-		.search-box {
+		.nav-links {
 			display: none;
 		}
 
-		.ide-center,
-		.menu-group {
+		.hamburger {
+			display: flex;
+		}
+
+		.nav-actions {
 			display: none;
+		}
+
+		.navbar[data-variant='floating'] {
+			top: 0;
+			border-radius: 0;
+			width: 100%;
+			left: 0;
+			transform: none;
+			border-left: none;
+			border-right: none;
+			border-top: none;
 		}
 	}
 </style>

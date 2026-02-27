@@ -1,14 +1,18 @@
 <script lang="ts">
-	/**
-	 * SSR Auth Layout - uses getServerState for SSR authentication
-	 */
 	import { createSvelteAuthClient } from '$lib/svelte/index.js';
 	import { authClient } from '$lib/hooks/auth-client.js';
 
 	let { children, data } = $props();
 
-	// Initialize auth client WITH SSR state
-	createSvelteAuthClient({ authClient, getServerState: () => data.authState });
+	// Handshake between SSR state and Client state
+	createSvelteAuthClient({
+		authClient,
+		getServerState: () => data.authState
+	});
 </script>
 
+<aside>
+	aside
+</aside>
 {@render children()}
+

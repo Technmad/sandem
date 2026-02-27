@@ -76,7 +76,7 @@
 - [ ] **Error boundary** in IDE layout — unhandled WebContainer errors should show a recoverable UI, not a blank screen
 - [ ] **`console.log` cleanup** — remove `$inspect()` calls and debug logs before any public release
 - [ ] **Liveblocks room creation** — `liveblocksRoomId` is currently optional and often null; wire up automatic room creation on project create
-- [ ] **`useFilesystem.mountProjectFiles()`** — this method exists but is unused; the layout handles mounting directly; either remove it or use it
+- [ ] **Split `useFilesystem` into `useProjectMounter` / `useFileWriter`** — the old `mountProjectFiles` method is unused; update callers (Editor now only needs writeFile).
 
 ---
 

@@ -1,7 +1,4 @@
-// src/lib/filesystem-utils.ts
-import type { FileSystemTree } from '@webcontainer/api';
-import type { Doc } from '$convex/_generated/dataModel.js';
-
+// src/lib/template.ts
 // ─── Template definitions ────────────────────────────────────────────────────
 // These are the source-of-truth files stored in Convex when a project is created.
 // `contents` is a plain string — no FileNode wrapper — matching the Convex schema.
@@ -14,7 +11,6 @@ export type ProjectFile = {
 export type Template = {
 	files: ProjectFile[];
 	entry: string;
-	visibleFiles: string[];
 };
 
 export const VITE_REACT_TEMPLATE: Template = {
@@ -87,41 +83,4 @@ root.render(
 		}
 	],
 	entry: 'App.jsx',
-	visibleFiles: ['App.jsx', 'index.jsx', 'index.html']
 };
-
-// ─── Conversion helpers ───────────────────────────────────────────────────────
-
-/**
- * Converts Convex project.files (flat array) into a WebContainer FileSystemTree.
- * Handles nested paths like "src/App.jsx" by creating intermediate directories.
- */
-export function projectFilesToFSTree(files: Doc<'projects'>['files']): FileSystemTree {
-	const tree: FileSystemTree = {};
-
-	for (const file of files) {
-		const parts = file.name.split('/');
-
-		if (parts.length === 1) {
-			tree[file.name] = {
-				file: { contents: file.contents ?? '' }
-			};
-		} else {
-			// Walk/create nested directory nodes
-			let current = tree;
-			for (let i = 0; i < parts.length - 1; i++) {
-				const segment = parts[i];
-				if (!current[segment]) {
-					current[segment] = { directory: {} };
-				}
-				current = (current[segment] as { directory: FileSystemTree }).directory;
-			}
-			const leafName = parts[parts.length - 1];
-			current[leafName] = {
-				file: { contents: file.contents ?? '' }
-			};
-		}
-	}
-
-	return tree;
-}
