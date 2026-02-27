@@ -90,9 +90,9 @@ src/
 │   ├── auth.ts           # better-auth integration
 │   └── http.ts           # auth HTTP routes
 ├── lib/
-│   ├── components/
-│   │   └── ide/          # Editor, Terminal, Preview, Tabs
-│   ├── hooks/            # useAutoSave, useProjectMounter, useFileWriter, usePreview, useShellProcess (former useFilesystem)
+    ├── components/       # Editor, Terminal, Preview, Tabs
+│                         
+│   ├── hooks/            # useAutoSave, useFilesystem, usePreview, useShellProcess
 │   └── utils/            # ide-context, auth-client, filesystem-utils, templates
 └── routes/
     ├── (home)/           # Landing page
