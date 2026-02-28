@@ -415,44 +415,6 @@ body {
 	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-
-	/* Navbar row + main content */
-	display: grid;
-	grid-template-rows: var(--navbar-height) 1fr;
-}
-
-/* ── Global Background Effects ───────────────────────────────── */
-/*
- * Dot-grid rendered on body::before.
- * Radial glow rendered on body::after.
- * Both are purely decorative and hidden from screen readers.
- */
-body::before {
-	content: '';
-	position: fixed;
-	inset: 0;
-	pointer-events: none;
-	background-image: radial-gradient(circle, var(--grid-color, transparent) 1px, transparent 1px);
-	background-size: 32px 32px;
-	opacity: 0.38;
-	z-index: 0;
-}
-
-body::after {
-	content: '';
-	position: fixed;
-	top: -160px;
-	left: 50%;
-	transform: translateX(-50%);
-	width: 900px;
-	height: 600px;
-	background: radial-gradient(
-		ellipse at center,
-		var(--glow-color, transparent) 0%,
-		transparent 70%
-	);
-	pointer-events: none;
-	z-index: 0;
 }
 
 /* ── IDE route override ──────────────────────────────────────── */
@@ -511,7 +473,8 @@ a {
 
 /* ── Lists ───────────────────────────────────────────────────── */
 ul,
-ol {
+ol,
+menu {
 	list-style: none;
 }
 

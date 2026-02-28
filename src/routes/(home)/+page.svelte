@@ -101,10 +101,6 @@
 <!-- ── 2. Split: hero content + IDE preview ───────────────────────── -->
 <PageSection variant="split">
 	<HeroContent />
-
-	{#snippet aside()}
-		<IdeWindow />
-	{/snippet}
 </PageSection>
 
 <!-- ── 3. Features bento grid ─────────────────────────────────────── -->
@@ -162,14 +158,4 @@
 	{/snippet}
 </PageFooter>
 
-<style>
-	/* Page-local: cta-label inside feature-cta card */
-	:global(.cta-label) {
-		font-size: 0.8rem;
-		color: var(--muted);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		font-weight: 600;
-		margin: 0;
-	}
-</style>
+

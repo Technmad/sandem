@@ -32,61 +32,74 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<NavigationBar variant="standard" {links}>
-	{#snippet field()}
-		<SearchBar
-			bind:value={searchValue}
-			placeholder="Search..."
-			style="flex: 0 1 200px; min-width: 150px;"
-		>
-			{#snippet icon()}
-				<Search size={16} />
-			{/snippet}
-		</SearchBar>
-	{/snippet}
+<div class="container">
+	<NavigationBar variant="standard" {links}>
+		{#snippet field()}
+			<SearchBar
+				bind:value={searchValue}
+				placeholder="Search..."
+				style="flex: 0 1 200px; min-width: 150px;"
+			>
+				{#snippet icon()}
+					<Search size={16} />
+				{/snippet}
+			</SearchBar>
+		{/snippet}
 
-	{#snippet actions()}
-		<!-- User menu -->
-		<DropDown bind:open={userDropdownOpen}>
-			{#snippet trigger()}
-				<Avatar
-					src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
-					alt="User avatar"
-					fallback="FX"
-					size="sm"
-				/>
-			{/snippet}
-			{#snippet content()}
-				<button onclick={() => (userDropdownOpen = false)}>Profile</button>
-				<button onclick={() => (userDropdownOpen = false)}>Settings</button>
-				<button onclick={() => (userDropdownOpen = false)}>Sign out</button>
-			{/snippet}
-		</DropDown>
+		{#snippet actions()}
+			<!-- User menu -->
+			<DropDown bind:open={userDropdownOpen}>
+				{#snippet trigger()}
+					<Avatar
+						src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+						alt="User avatar"
+						fallback="FX"
+						size="sm"
+					/>
+				{/snippet}
+				{#snippet content()}
+					<button onclick={() => (userDropdownOpen = false)}>Profile</button>
+					<button onclick={() => (userDropdownOpen = false)}>Settings</button>
+					<button onclick={() => (userDropdownOpen = false)}>Sign out</button>
+				{/snippet}
+			</DropDown>
 
-		<!-- Sign in button (if not authenticated) -->
-		<Button variant="outline" size="sm">Sign in</Button>
-	{/snippet}
-</NavigationBar>
+			<!-- Sign in button (if not authenticated) -->
+			<Button variant="outline" size="sm">Sign in</Button>
+		{/snippet}
+	</NavigationBar>
 
-<main>
-	{@render children()}
-</main>
+	<main>
+		{@render children()}
+	</main>
+</div>
 
 <style>
-	main {
+	.container {
+		/* Navbar row + main content */
+		min-height: 100vh;
+		display: grid;
+		grid-template-areas:
+			'navigation'
+			'content';
+		grid-template-rows: auto 1fr;
+	}
+
+	:global(.navbar) {
+		grid-area: navigation;
+	}
+
+	:global(main) {
 		/*
 		 * Sits in the second grid row of body (after navbar).
 		 * No explicit height — it stretches to fill remaining space.
 		 * overflow-x: hidden prevents horizontal scroll from
 		 * overflowing sections / hero glows.
 		 */
+		grid-area: content;
+
 		position: relative;
 		overflow-x: hidden;
 		width: 100%;
-	}
-
-	:global(.nav-actions-example) {
-		width: 100%;
-		flex: 1;
 	}
 </style>
