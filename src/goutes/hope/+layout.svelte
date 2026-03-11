@@ -5,6 +5,8 @@
 	import { VITE_REACT_TEMPLATE } from '$lib/utils/template.js';
 	import { projectFilesToTree } from '$lib/utils/filesystem.js';
 
+	let { children } = $props();
+
 	let webcontainer = $state<WebContainer | null>(null);
 	let ready = $state(false);
 
@@ -33,3 +35,14 @@
 		ready = true;
 	});
 </script>
+
+{#if ready}
+	<div class="sandbox">
+		<!-- Gate rendering until the WebContainer is booted and files are mounted.
+		 This means Editor / Terminal / Preview never call getWebcontainer() too early. -->
+
+		{@render children()}
+	</div>
+{:else}
+		<p>Spinning up your sandbox…</p>
+{/if}

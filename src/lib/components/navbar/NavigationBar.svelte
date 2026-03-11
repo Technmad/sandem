@@ -15,14 +15,7 @@
 
 	let { variant = 'default' }: Props = $props();
 
-	const links = [
-		{ path: '/projects', label: 'repo' },
-		{ path: '/login', label: 'auth' },
-		{ path: '/hope', label: 'hope' },
-		{ path: '/test/ssr', label: 'server' },
-		{ path: '/test/client-only', label: 'client' },
-		{ path: '/test/queries', label: 'query' }
-	];
+	const links = [{ path: '/repo', label: 'repo' }];
 
 	const file = [
 		{ label: 'Michael Scott', value: 'michael' },
@@ -81,7 +74,7 @@
 	<NavigationMenu.List class="navbar-list">
 		<NavigationMenu.Item>
 			<NavigationMenu.Trigger>
-				<Home size={16} />
+				<Home size={16} /> 
 			</NavigationMenu.Trigger>
 
 			<!--

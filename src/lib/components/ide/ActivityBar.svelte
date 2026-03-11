@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Files, Search, GitBranch, Settings, Play } from '@lucide/svelte';
 
-	let activeTab = $state('explorer');
+	let activeTab = $state<string>('explorer');
 
 	const tools = [
 		{ id: 'explorer', icon: Files, label: 'Explorer' },
