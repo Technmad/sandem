@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Sun, Moon } from '@lucide/svelte';
+	import { SunIcon, MoonIcon } from 'phosphor-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 
 	let mode = $state<'light' | 'dark'>('dark');
@@ -30,9 +30,9 @@
 	class="mode-toggle"
 >
 	{#if mode === 'light'}
-		<Sun size={18} />
+		<SunIcon size={18} />
 	{:else}
-		<Moon size={18} />
+		<MoonIcon size={18} />
 	{/if}
 </Button>
 

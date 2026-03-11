@@ -2,15 +2,14 @@
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import Dropdown from '$lib/components/ui/DropDown.svelte';
+	import Button from '../ui/Button.svelte';
+	import DotsThreeIcon from 'phosphor-svelte/lib/DotsThreeIcon';
 
 	const themes = [
 		{ id: 'default', label: 'Default', light: 'hsl(0 0% 90%)', dark: 'hsl(0 0% 8%)' },
 		{ id: 'abyss', label: 'Abyss', light: 'hsl(215 28% 94%)', dark: 'hsl(222 42% 7%)' },
 		{ id: 'forest', label: 'Forest', light: 'hsl(130 28% 91%)', dark: 'hsl(130 38% 8%)' },
-		{ id: 'solar', label: 'Solar', light: 'hsl(38 50% 91%)', dark: 'hsl(22 52% 10%)' },
-		{ id: 'ocean', label: 'Ocean', light: 'hsl(205 40% 91%)', dark: 'hsl(218 54% 9%)' },
-		{ id: 'rose', label: 'Rose', light: 'hsl(340 30% 92%)', dark: 'hsl(340 38% 8%)' },
-		{ id: 'midnight', label: 'Midnight', light: 'hsl(255 25% 93%)', dark: 'hsl(252 42% 8%)' }
+		{ id: 'solar', label: 'Solar', light: 'hsl(38 50% 91%)', dark: 'hsl(22 52% 10%)' }
 	];
 
 	type Theme = (typeof themes)[0];
@@ -66,5 +65,9 @@
 {#if children}
 	{@render children({ themes, currentTheme, activeTheme, selectTheme })}
 {:else}
-	<Dropdown label={activeTheme.label} items={dropdownItems} onSelect={selectTheme} />
+	<Dropdown label={activeTheme.label} items={dropdownItems} onSelect={selectTheme}>
+		<Button variant="outline" style="radius: 2rem" class="trigger">
+			<DotsThreeIcon />
+		</Button>
+	</Dropdown>
 {/if}

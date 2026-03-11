@@ -18,9 +18,9 @@
 	} = $props();
 </script>
 
-<header class="page-header" data-variant={variant}>
+<header data-variant={variant}>
 	{#if badge}
-		<div class="badge-wrapper">{@render badge()}</div>
+		<div class="badge">{@render badge()}</div>
 	{/if}
 
 	{#if heading}
@@ -38,15 +38,15 @@
 	{/if}
 
 	{#if children}
-		<div class="actions">
+		<main class="actions">
 			{@render children()}
-		</div>
+		</main>
 	{/if}
 </header>
 
 <style>
 	/* ── Base ────────────────────────────────────────────────────────── */
-	.page-header {
+	header {
 		position: relative;
 		display: flex;
 		flex-direction: column;
@@ -76,7 +76,7 @@
 	}
 
 	/* ── Shared badge base ───────────────────────────────────────────── */
-	.badge-wrapper {
+	.badge {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
@@ -107,7 +107,7 @@
 	}
 
 	/* ── Variant: hero ───────────────────────────────────────────────── */
-	.page-header[data-variant='hero'] {
+	header[data-variant='hero'] {
 		--ph-gap: 2rem;
 		--ph-padding: 9rem 1.5rem 7rem;
 		--ph-max-width: 860px;
@@ -122,18 +122,18 @@
 	}
 
 	/* Lift all children above the glow layer */
-	.page-header[data-variant='hero'] > * {
+	header[data-variant='hero'] > * {
 		position: relative;
 		z-index: 1;
 	}
 
-	.page-header[data-variant='hero'] .badge-wrapper {
+	header[data-variant='hero'] .badge {
 		background-image: linear-gradient(135deg, var(--glint) 0%, transparent 100%);
 		text-transform: uppercase;
 		box-shadow: var(--shadow);
 	}
 
-	.page-header[data-variant='hero'] .heading {
+	header[data-variant='hero'] .heading {
 		font-weight: 800;
 		letter-spacing: -0.04em;
 		background: linear-gradient(160deg, var(--text) 30%, var(--accent) 100%);
@@ -142,7 +142,7 @@
 		background-clip: text;
 	}
 
-	.page-header[data-variant='hero'] .actions {
+	header[data-variant='hero'] .actions {
 		margin-top: 0.5rem;
 	}
 </style>

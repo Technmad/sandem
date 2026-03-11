@@ -8,10 +8,7 @@
 
 	/* ── Motion ──────────────────────────────────────────────── */
 	--time: 200ms;
-	--time-slow: 400ms;
 	--ease: cubic-bezier(0.4, 0, 0.2, 1);
-	--ease-out: cubic-bezier(0, 0, 0.2, 1);
-	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
 	/* ── Shape ───────────────────────────────────────────────── */
 	--radius: 2rem;
@@ -41,14 +38,13 @@
 	--info: hsl(200 80% 45%);
 
 	/* ── Backdrop / glass ────────────────────────────────────── */
-	--backdrop-blur: blur(16px);
+	--blur: blur(16px);
 	--glass-bg: hsla(0, 0%, 50%, 0.08);
 	--glass-border: hsla(0, 0%, 50%, 0.12);
 }
 
 /* ============================================================
    THEME: default
-   Surface stack: bg(85%) → mg(90%) → fg(95%) → highlight(100%)
    ============================================================ */
 :root[data-theme='default'][data-mode='light'] {
 	--bg: hsl(0 0% 85%);
@@ -64,7 +60,7 @@
 	--shade: hsl(0 0% 60%);
 	--accent: hsl(23, 100%, 50%);
 	/* Background effects */
-	--grid-color: hsl(0 0% 75%);
+
 	--glow-color: hsl(0 0% 88%);
 }
 :root[data-theme='default'][data-mode='dark'] {
@@ -81,7 +77,7 @@
 	--shade: hsl(0 0% 30%);
 	--accent: hsl(23, 100%, 50%);
 	/* Background effects */
-	--grid-color: hsl(0 0% 18%);
+
 	--glow-color: hsl(0 0% 10%);
 }
 
@@ -101,8 +97,7 @@
 	--ring: hsl(215 60% 50%);
 	--shade: hsl(215 20% 65%);
 	--accent: hsl(215 90% 52%);
-	/* Background effects */
-	--grid-color: hsl(215 20% 80%);
+
 	--glow-color: hsl(215 30% 92%);
 }
 :root[data-theme='abyss'][data-mode='dark'] {
@@ -118,8 +113,7 @@
 	--ring: hsl(215 80% 60%);
 	--shade: hsl(215 30% 22%);
 	--accent: hsl(215 85% 60%);
-	/* Background effects */
-	--grid-color: hsl(222 35% 12%);
+
 	--glow-color: hsl(222 50% 6%);
 }
 
@@ -139,8 +133,7 @@
 	--ring: hsl(130 50% 38%);
 	--shade: hsl(130 22% 60%);
 	--accent: hsl(145 65% 36%);
-	/* Background effects */
-	--grid-color: hsl(130 22% 76%);
+
 	--glow-color: hsl(130 28% 90%);
 }
 :root[data-theme='forest'][data-mode='dark'] {
@@ -156,8 +149,7 @@
 	--ring: hsl(130 55% 45%);
 	--shade: hsl(130 28% 20%);
 	--accent: hsl(145 60% 50%);
-	/* Background effects */
-	--grid-color: hsl(130 32% 14%);
+
 	--glow-color: hsl(130 45% 5%);
 }
 
@@ -177,8 +169,6 @@
 	--ring: hsl(35 80% 45%);
 	--shade: hsl(32 35% 60%);
 	--accent: hsl(30 90% 48%);
-	/* Background effects */
-	--grid-color: hsl(35 38% 76%);
 	--glow-color: hsl(38 50% 90%);
 }
 :root[data-theme='solar'][data-mode='dark'] {
@@ -194,123 +184,7 @@
 	--ring: hsl(35 80% 55%);
 	--shade: hsl(25 35% 22%);
 	--accent: hsl(38 85% 55%);
-	/* Background effects */
-	--grid-color: hsl(22 42% 16%);
 	--glow-color: hsl(22 55% 7%);
-}
-
-/* ============================================================
-   THEME: ocean  (slate-blue / seafoam)
-   ============================================================ */
-:root[data-theme='ocean'][data-mode='light'] {
-	--bg: hsl(205 45% 86%);
-	--mg: hsl(205 40% 91%);
-	--fg: hsl(205 35% 96%);
-	--highlight: hsl(205 28% 100%);
-	--text: hsl(218 55% 12%);
-	--muted: hsl(212 28% 40%);
-	--border: hsl(205 35% 68%);
-	--glint: hsl(205 35% 78%);
-	--shadow: 0 1px 3px hsla(218, 60%, 0%, 0.12), 0 1px 2px hsla(218, 60%, 0%, 0.08);
-	--ring: hsl(200 70% 45%);
-	--shade: hsl(210 28% 60%);
-	--accent: hsl(195 80% 40%);
-	/* Background effects */
-	--grid-color: hsl(205 32% 76%);
-	--glow-color: hsl(205 40% 90%);
-}
-:root[data-theme='ocean'][data-mode='dark'] {
-	--bg: hsl(218 58% 5%);
-	--mg: hsl(218 54% 9%);
-	--fg: hsl(218 50% 13%);
-	--highlight: hsl(205 45% 42%);
-	--text: hsl(200 55% 92%);
-	--muted: hsl(210 28% 55%);
-	--border: hsl(218 40% 20%);
-	--glint: hsl(215 38% 28%);
-	--shadow: 0 1px 4px hsla(218, 60%, 0%, 0.5), 0 1px 2px hsla(218, 60%, 0%, 0.4);
-	--ring: hsl(200 75% 55%);
-	--shade: hsl(215 35% 20%);
-	--accent: hsl(195 75% 50%);
-	/* Background effects */
-	--grid-color: hsl(218 44% 12%);
-	--glow-color: hsl(218 58% 6%);
-}
-
-/* ============================================================
-   THEME: rose  (warm pink / blush)
-   ============================================================ */
-:root[data-theme='rose'][data-mode='light'] {
-	--bg: hsl(340 35% 88%);
-	--mg: hsl(340 30% 92%);
-	--fg: hsl(340 22% 97%);
-	--highlight: hsl(340 15% 100%);
-	--text: hsl(340 45% 10%);
-	--muted: hsl(340 18% 42%);
-	--border: hsl(340 25% 72%);
-	--glint: hsl(340 25% 82%);
-	--shadow: 0 1px 3px hsla(340, 50%, 0%, 0.1), 0 1px 2px hsla(340, 50%, 0%, 0.07);
-	--ring: hsl(345 70% 52%);
-	--shade: hsl(340 20% 65%);
-	--accent: hsl(345 75% 50%);
-	/* Background effects */
-	--grid-color: hsl(340 22% 80%);
-	--glow-color: hsl(340 30% 90%);
-}
-:root[data-theme='rose'][data-mode='dark'] {
-	--bg: hsl(340 40% 4%);
-	--mg: hsl(340 38% 8%);
-	--fg: hsl(340 35% 12%);
-	--highlight: hsl(345 40% 45%);
-	--text: hsl(340 25% 94%);
-	--muted: hsl(340 15% 58%);
-	--border: hsl(340 28% 20%);
-	--glint: hsl(340 25% 28%);
-	--shadow: 0 1px 4px hsla(340, 50%, 0%, 0.5), 0 1px 2px hsla(340, 50%, 0%, 0.4);
-	--ring: hsl(345 70% 62%);
-	--shade: hsl(340 28% 20%);
-	--accent: hsl(345 80% 65%);
-	/* Background effects */
-	--grid-color: hsl(340 32% 13%);
-	--glow-color: hsl(340 45% 5%);
-}
-
-/* ============================================================
-   THEME: midnight  (deep violet / indigo)
-   ============================================================ */
-:root[data-theme='midnight'][data-mode='light'] {
-	--bg: hsl(255 30% 88%);
-	--mg: hsl(255 25% 93%);
-	--fg: hsl(255 18% 97%);
-	--highlight: hsl(255 12% 100%);
-	--text: hsl(255 45% 10%);
-	--muted: hsl(255 18% 42%);
-	--border: hsl(255 22% 74%);
-	--glint: hsl(255 22% 84%);
-	--shadow: 0 1px 3px hsla(255, 40%, 0%, 0.1), 0 1px 2px hsla(255, 40%, 0%, 0.07);
-	--ring: hsl(260 65% 55%);
-	--shade: hsl(255 18% 65%);
-	--accent: hsl(260 75% 55%);
-	/* Background effects */
-	--grid-color: hsl(255 20% 80%);
-	--glow-color: hsl(255 25% 90%);
-}
-:root[data-theme='midnight'][data-mode='dark'] {
-	--bg: hsl(252 45% 4%);
-	--mg: hsl(252 42% 8%);
-	--fg: hsl(252 38% 12%);
-	--highlight: hsl(258 45% 48%);
-	--text: hsl(252 20% 95%);
-	--muted: hsl(255 16% 60%);
-	--border: hsl(252 30% 20%);
-	--glint: hsl(255 28% 30%);
-	--shadow: 0 1px 4px hsla(252, 50%, 0%, 0.55), 0 1px 2px hsla(252, 50%, 0%, 0.45);
-	--ring: hsl(260 75% 68%);
-	--shade: hsl(255 30% 22%);
-	--accent: hsl(260 80% 68%);
-	/* Background effects */
-	--grid-color: hsl(252 35% 14%);
-	--glow-color: hsl(252 50% 6%);
 }
 
 /* ============================================================

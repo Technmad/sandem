@@ -1,12 +1,12 @@
 <script lang="ts">
+<<<<<<< HEAD
 	import '../../app.css';
 	import favicon from '$lib/assets/favicon.svg';
 
 	import { PUBLIC_CONVEX_URL } from '$env/static/public';
 	import { setupConvex } from 'convex-svelte';
-	import NavigationBar from '$lib/components/navbar/NavigationBar.svelte';
-	setupConvex(PUBLIC_CONVEX_URL);
 
+	setupConvex(PUBLIC_CONVEX_URL);
 	let { children } = $props();
 </script>
 
@@ -14,10 +14,24 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div class="container">
-	<NavigationBar />
+{@render children()}
+=======
+	import NavigationBar from '$lib/components/layout/NavigationBar.svelte';
 
-	<main>
+	const links = [
+		{ path: '/', label: 'home' },
+		{ path: '/repo', label: 'repo' },
+		{ path: '/shop', label: 'shop' },
+		{ path: '/auth', label: 'auth' }
+	];
+
+	let { children } = $props();
+</script>
+
+<div class="container">
+	<NavigationBar {links} />
+
+	<main class="content">
 		{@render children()}
 	</main>
 </div>
@@ -40,7 +54,12 @@
 		 */
 	}
 
-	:global(main) {
+	:global(.navbar) {
+		grid-area: navigation;
+		max-height: var(--navbar-height);
+	}
+
+	.content {
 		grid-area: content;
 		min-height: calc(100% - var(--navbar-height));
 		position: relative;
@@ -56,15 +75,5 @@
 		 * position: relative → stacking context for page-level z-index layers.
 		 */
 	}
-
-	:global(.navbar) {
-		grid-area: navigation;
-	}
-
-	:global(.sign-in) {
-		width: 4rem;
-		height: 2rem;
-		padding: 0rem;
-		flex-shrink: 0;
-	}
 </style>
+>>>>>>> b36b4de6784089e4826b57edc381068bca3fd052

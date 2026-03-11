@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronRight, ChevronDown, FileCode, Folder } from '@lucide/svelte';
+	import { ArrowDownIcon, ArrowRightIcon, FileCodeIcon, FolderIcon } from 'phosphor-svelte';
 
 	interface FileItem {
 		name: string;
@@ -37,9 +37,9 @@
 			{#if item.type === 'folder'}
 				<button class="item-label folder" onclick={() => toggleFolder(item)}>
 					<span class="chevron">
-						{#if item.isOpen}<ChevronDown size={14} />{:else}<ChevronRight size={14} />{/if}
+						{#if item.isOpen}<ArrowDownIcon size={14} />{:else}<ArrowRightIcon size={14} />{/if}
 					</span>
-					<Folder size={16} class="icon-folder" />
+					<FolderIcon size={16} class="icon-folder" />
 					{item.name}
 				</button>
 
@@ -52,7 +52,7 @@
 									class:active={selectedFile === child.name}
 									onclick={() => (selectedFile = child.name)}
 								>
-									<FileCode size={16} class="icon-file" />
+									<FileCodeIcon size={16} class="icon-file" />
 									{child.name}
 								</button>
 							</li>
@@ -65,7 +65,7 @@
 					class:active={selectedFile === item.name}
 					onclick={() => (selectedFile = item.name)}
 				>
-					<FileCode size={16} class="icon-file" />
+					<FileCodeIcon size={16} class="icon-file" />
 					{item.name}
 				</button>
 			{/if}

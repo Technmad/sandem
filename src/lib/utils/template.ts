@@ -76,10 +76,26 @@ root.render(
 		},
 		{
 			name: 'App.jsx',
-			contents: `export default function App() {
+			contents: `import React, { useState } from 'react';
+
+export default function App() {
   const data = "world";
-  return <h1>Hello {data}</h1>;
-}`
+  const [count, setCount] = useState(0);
+  const increment = () => {
+  setCount(previous => previous + 1);
+};
+
+  return ( 
+  <main>
+    <h1>Hello {data}</h1>
+    <p>You clicked {count} times</p>
+      <button onClick={increment}>
+        Click me
+      </button>        
+  </main>
+  )
+};
+`
 		}
 	],
 	entry: 'App.jsx'

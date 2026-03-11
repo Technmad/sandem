@@ -2,22 +2,29 @@
 	import { Menubar, type WithoutChildrenOrChild } from 'bits-ui';
 
 	type Props = WithoutChildrenOrChild<Menubar.MenuProps> & {
-		triggerText: string;
+		text: string;
 		items: { label: string; value: string; onSelect?: () => void }[];
-		contentProps?: WithoutChildrenOrChild<Menubar.ContentProps>;
+		content?: WithoutChildrenOrChild<Menubar.ContentProps>;
 	};
 
-	let { triggerText, items, contentProps, ...restProps }: Props = $props();
+	let { text, items, content, ...rest }: Props = $props();
 </script>
 
-<Menubar.Menu {...restProps}>
+<Menubar.Menu {...rest}>
 	<Menubar.Trigger class="menubar-trigger">
-		{triggerText}
+		{text}
 	</Menubar.Trigger>
-	<Menubar.Content class="menubar-content" {...contentProps}>
-		<Menubar.Group class="menubar-group" aria-label={triggerText}>
+	<Menubar.Content class="menubar-content" {...content}>
+		<Menubar.Group class="menubar-group" aria-label={text}>
 			{#each items as item}
-				<Menubar.Item class="menubar-item" textValue={item.label} onSelect={item.onSelect}>
+				<Menubar.Item
+					class="menubar-item"
+					textValue={item.label}
+					onSelect={() => {
+						console.log(`MenuItem selected: ${item.label} (${item.value})`);
+						item.onSelect?.();
+					}}
+				>
 					{item.label}
 				</Menubar.Item>
 			{/each}
