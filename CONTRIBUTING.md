@@ -1,8 +1,26 @@
 # Contributing to Sandem
 
 > Last updated: 2026-03-21
+>
+> **📚 For architecture & feature documentation, see [docs/README.md](./docs/README.md)**
 
-Thank you for your interest in contributing! This guide will help you get set up for development and testing.
+Thank you for contributing to Sandem. This guide focuses on local setup, validation, and PR quality.
+
+## Documentation first (recommended)
+
+Before changing architecture-heavy areas, read:
+
+- [docs/00_Getting_Started.md](./docs/00_Getting_Started.md)
+- [docs/03_Architecture_Details.md](./docs/03_Architecture_Details.md)
+- [docs/10_Next_Steps.md](./docs/10_Next_Steps.md)
+
+If you are working on explorer/project synchronization, also review:
+
+- [src/lib/controllers/explorer/createFileTreeController.svelte.ts](src/lib/controllers/explorer/createFileTreeController.svelte.ts)
+- [src/lib/hooks/explorer/createProjectSyncController.svelte.ts](src/lib/hooks/explorer/createProjectSyncController.svelte.ts)
+- [src/lib/controllers/explorer/createExplorerActionsController.svelte.ts](src/lib/controllers/explorer/createExplorerActionsController.svelte.ts)
+- [src/lib/utils/editor/fileTreeOps.ts](src/lib/utils/editor/fileTreeOps.ts)
+- [src/lib/utils/editor/projectFolderSync.ts](src/lib/utils/editor/projectFolderSync.ts)
 
 ## Prerequisites
 
@@ -167,6 +185,7 @@ Use the Node/pnpm path above for local contribution work.
 - We use Prettier + ESLint.
 - Run `pnpm run format` before committing.
 - Run `pnpm run lint` and `pnpm run check` before opening a PR.
+- Prefer minimal, focused commits and avoid unrelated formatting churn.
 
 ## Pull Request Process
 

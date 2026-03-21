@@ -1,12 +1,20 @@
 # Changelog
 
-> Last updated: 2026-03-20
+> Last updated: 2026-03-21
+>
+> **📚 For complete project documentation, see [docs/README.md](./docs/README.md)**
 
 ## Unreleased
 
 ### Patch Changes
 
-- docs: refreshed project docs (`README`, `CONTRIBUTING`, `README.Docker`, `TO-DO`, bug report status, and agent notes)
+- docs: moved architecture/implementation materials into [`docs/`](./docs/) with ordered filenames (`00_Getting_Started.md` → `10_Next_Steps.md`) and an index-style [docs guide](./docs/README.md)
+- docs: updated root docs (`README`, `CONTRIBUTING`, `CHANGELOG`) to point to the new docs hub and current implementation status
+- explorer: extracted file-tree pure operations into [src/lib/utils/editor/fileTreeOps.ts](src/lib/utils/editor/fileTreeOps.ts)
+- explorer: improved file-tree resilience by adding WebContainer readiness checks + retry loop in [src/lib/controllers/explorer/createFileTreeController.svelte.ts](src/lib/controllers/explorer/createFileTreeController.svelte.ts)
+- explorer: added initial Convex/project sync scaffolding in [src/lib/hooks/explorer/createProjectSyncController.svelte.ts](src/lib/hooks/explorer/createProjectSyncController.svelte.ts), [src/lib/controllers/explorer/createExplorerActionsController.svelte.ts](src/lib/controllers/explorer/createExplorerActionsController.svelte.ts), and [src/lib/utils/editor/projectFolderSync.ts](src/lib/utils/editor/projectFolderSync.ts)
+- auth: added timeout + graceful 504 fallback in SvelteKit auth request forwarding in [src/lib/sveltekit/index.ts](src/lib/sveltekit/index.ts)
+- vite: added Monaco dev sourcemap patching plugin + optimizeDeps exclusion in [vite.config.ts](vite.config.ts)
 - ui: improved reusable token-driven component APIs for auth + showcase routes
 - showcase: tabs now render different accordion datasets in `/shop`
 - repo: demo mode is now guest-only on `/repo` (authenticated users no longer fall back to demo based on project count)

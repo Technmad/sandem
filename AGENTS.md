@@ -35,6 +35,7 @@ After completing the code, ask the user if they want a playground link. Only cal
 5. **Starter Seed on First Visit**: For authenticated owners with zero projects, rely on `ensureStarterProjectForOwner` to create starter content.
 6. **Keep this file current**: Whenever `AGENTS.md` is read during work, update it as needed so it accurately reflects the app’s current behavior, architecture, scripts, and known status.
 7. **Explorer Multi-root Contract**: In authenticated `/repo`, the WebContainer root is a multi-project workspace (`project-*` folders from Convex). Explorer tree should treat those folders as the canonical top-level roots.
+8. **Explorer Sync Status**: Treat Convex ↔ Explorer sync as foundational/in-progress unless explicitly wired in the active `/repo` shell. Avoid documenting it as fully shipped if delete/rename root actions are still scaffolded.
 
 ## Styling Architecture (The "Svelte.dev" Way)
 
@@ -69,6 +70,9 @@ Use this checklist when picking up the project in a new session to get productiv
 - `pnpm run test:unit` — run Vitest in watch/interactive mode
 - `pnpm run test:e2e:install-browsers` — one-time Playwright browser install
 - `pnpm run test:e2e` — run E2E tests
+- `pnpm run setup:test-user` — creates/verifies E2E auth user; skips by default if SITE_URL is unreachable (`SKIP_SETUP_TEST_USER_IF_SITE_UNREACHABLE=0` to fail hard)
+- `pnpm run changeset` — wrapper that runs interactive prompt locally and a non-interactive status check in CI/audits
+- `pnpm run release` — wrapper that skips publish when npm auth is missing; use `pnpm run release:publish` for strict publish behavior
 
 ### Key files & areas
 
@@ -77,8 +81,13 @@ Use this checklist when picking up the project in a new session to get productiv
 - Card component shell: `src/lib/components/ui/primitives/Card.svelte`
 - Theme switcher: `src/lib/components/ui/theme/ThemeSwitcher.svelte`
 - IDE route shell: `src/routes/repo/+layout.svelte`, `src/routes/repo/+layout.server.ts`
-- Repo workspace controller (runtime + project orchestration): `src/lib/controllers/workspace/createRepoLayoutController.svelte.ts`
+- Repo workspace controller (runtime + project orchestration): `src/lib/controllers/workspace/createRepoController.svelte.ts`
+- Explorer tree controller (with readiness retry): `src/lib/controllers/explorer/createFileTreeController.svelte.ts`
+- Explorer pure tree ops: `src/lib/utils/editor/fileTreeOps.ts`
+- Explorer/Convex sync scaffolding: `src/lib/hooks/explorer/createProjectSyncController.svelte.ts`, `src/lib/controllers/explorer/createExplorerActionsController.svelte.ts`
+- Project folder sync helpers: `src/lib/utils/editor/projectFolderSync.ts`
 - App-level SvelteKit error helpers: `src/lib/sveltekit/errors.ts`
+- SvelteKit auth forwarding + timeout handling: `src/lib/sveltekit/index.ts`
 - Lifecycle hooks: `src/lib/hooks/*`
 - Editor pane lifecycle composition: `src/lib/hooks/editor/createEditorLifecycle.svelte.ts`
 - UI command controllers: `src/lib/controllers/*`
@@ -87,6 +96,7 @@ Use this checklist when picking up the project in a new session to get productiv
 - Layout and pages: `src/routes/+layout.svelte`, `src/routes/(home)/*`, `src/routes/repo/*`
 - Project file-tree conversion utility: `src/lib/utils/project/filesystem.ts`
 - Docker status reference: `README.md` (compose exists, root Dockerfile currently missing)
+- Architecture docs hub: `docs/README.md` (ordered docs `00_...` through `10_...`)
 
 ### Conventions & best practices
 
@@ -115,5 +125,8 @@ Use this checklist when picking up the project in a new session to get productiv
 - If banner image 404s in dev, verify root assets `banner.webp` / `bannerDark.webp` exist and README references them correctly.
 - If `docker compose up --build` fails, check `README.md` Docker section: the compose file references a root Dockerfile that is not currently present.
 - If lint fails for formatting, run `pnpm run format` and re-run `pnpm run lint`.
+- If explorer shows "WebContainer not ready", verify the retry path in `createFileTreeController` and ensure runtime boot starts via repo controller mount.
+- If auth endpoints intermittently fail with aborted fetches, verify `PUBLIC_CONVEX_SITE_URL` and current timeout behavior in `src/lib/sveltekit/index.ts`.
+- If `setup:test-user` appears skipped, ensure frontend server is running at `SITE_URL` or set `SKIP_SETUP_TEST_USER_IF_SITE_UNREACHABLE=0` to enforce failure.
 
 ---

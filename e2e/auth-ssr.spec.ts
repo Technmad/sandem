@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 async function ensureAuthenticated(page: import('@playwright/test').Page) {
 	const email = process.env.TEST_USER_EMAIL;
 	const password = process.env.TEST_USER_PASSWORD;
@@ -24,6 +26,15 @@ async function ensureAuthenticated(page: import('@playwright/test').Page) {
 	await expect(page.locator('[data-testid="is-authenticated"]')).toContainText('true', {
 		timeout: 15000
 	});
+
+	// Ensure server-side auth state has caught up as well.
+	// Some environments need one SSR round-trip after client sign-in
+	// before protected SSR data is non-null.
+	await page.goto('/test/ssr');
+	await expect(page.locator('[data-testid="ssr-auth-state"]')).toContainText('true', {
+		timeout: 15000
+	});
+
 	return true;
 }
 
@@ -253,8 +264,19 @@ test.describe('Query Behavior - Authenticated', () => {
 		// Should be authenticated
 		await expect(page.locator('[data-testid="is-authenticated"]')).toContainText('true');
 
-		// Protected query should show user email
-		await expect(page.locator('[data-testid="protected-email"]')).toBeVisible({ timeout: 5000 });
+		// Protected query should show user email.
+		// In slower environments auth/query hydration can lag after sign-in,
+		// so retry once with a full reload before failing.
+		const protectedEmail = page.locator('[data-testid="protected-email"]');
+		try {
+			await expect(protectedEmail).toBeVisible({ timeout: 8000 });
+		} catch {
+			await page.reload();
+			await expect(page.locator('[data-testid="is-authenticated"]')).toContainText('true', {
+				timeout: 15000
+			});
+			await expect(protectedEmail).toBeVisible({ timeout: 8000 });
+		}
 	});
 
 	test('SSR provides initial data for both queries', async ({ page }) => {

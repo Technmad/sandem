@@ -104,7 +104,7 @@ export const createConvexHttpClient = (args: {
 	return client;
 };
 
-const handler = (request: Request, opts?: { convexSiteUrl?: string }) => {
+const handler = async (request: Request, opts?: { convexSiteUrl?: string }) => {
 	const requestUrl = new URL(request.url);
 	const convexSiteUrl = opts?.convexSiteUrl ?? PUBLIC_CONVEX_SITE_URL;
 
@@ -117,12 +117,30 @@ const handler = (request: Request, opts?: { convexSiteUrl?: string }) => {
 	newRequest.headers.set('host', new URL(nextUrl).host);
 	newRequest.headers.set('accept-encoding', 'application/json');
 
-	return fetch(newRequest, { method: request.method, redirect: 'manual' });
+	try {
+		// Set a reasonable timeout for auth requests (10 seconds)
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+		const response = await fetch(newRequest, {
+			method: request.method,
+			redirect: 'manual',
+			signal: controller.signal
+		});
+
+		clearTimeout(timeoutId);
+		return response;
+	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') {
+			return new Response('Gateway timeout', { status: 504 });
+		}
+		throw error;
+	}
 };
 
 export const createSvelteKitHandler = (opts?: { convexSiteUrl?: string }) => {
 	const requestHandler: RequestHandler = async ({ request }) => {
-		return handler(request, opts);
+		return await handler(request, opts);
 	};
 
 	return {

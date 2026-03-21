@@ -1,5 +1,10 @@
 import type { WebContainer } from '@webcontainer/api';
 import type { FileNode } from '$types/editor.js';
+import {
+	readDirRecursive,
+	createSignature,
+	pruneExpandedState as pruneExpandedStatePure
+} from '$lib/utils/editor/fileTreeOps.js';
 
 export type { FileNode } from '$types/editor.js';
 
@@ -12,66 +17,6 @@ function toErrorMessage(error: unknown): string {
 	return String(error);
 }
 
-function collectDirectoryPaths(nodes: FileNode[], out = new Set<string>()) {
-	for (const node of nodes) {
-		if (node.type !== 'directory') continue;
-		out.add(node.path);
-		if (node.children?.length) {
-			collectDirectoryPaths(node.children, out);
-		}
-	}
-	return out;
-}
-
-async function readDirRecursive(
-	wc: WebContainer,
-	dirPath: string,
-	rootFolders: ReadonlySet<string>,
-	depth = 0
-): Promise<FileNode[]> {
-	const IGNORE = new Set(['.git', 'node_modules', '.svelte-kit', 'dist', '.cache']);
-
-	const entries = await wc.fs.readdir(dirPath, { withFileTypes: true });
-	const relevantEntries = entries.filter((entry) => {
-		if (IGNORE.has(entry.name)) return false;
-		if (dirPath !== '.') return true;
-		if (rootFolders.size === 0) return true;
-		return entry.isDirectory() && rootFolders.has(entry.name);
-	});
-
-	const nodes = await Promise.all(
-		relevantEntries.map(async (entry) => {
-			const fullPath = dirPath === '.' ? entry.name : `${dirPath}/${entry.name}`;
-
-			if (entry.isDirectory()) {
-				const children = await readDirRecursive(wc, fullPath, rootFolders, depth + 1);
-				return { name: entry.name, path: fullPath, type: 'directory', children, depth } as FileNode;
-			}
-
-			return { name: entry.name, path: fullPath, type: 'file', depth } as FileNode;
-		})
-	);
-
-	return nodes.sort((a, b) => {
-		if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
-		return a.name.localeCompare(b.name);
-	});
-}
-
-function createSignature(nodes: FileNode[]): string {
-	const out: string[] = [];
-
-	function walk(list: FileNode[]) {
-		for (const node of list) {
-			out.push(`${node.type}:${node.path}`);
-			if (node.children) walk(node.children);
-		}
-	}
-
-	walk(nodes);
-	return out.join('|');
-}
-
 export function createFileTree(
 	getWebcontainer: () => WebContainer,
 	options: CreateFileTreeOptions = {}
@@ -82,6 +27,9 @@ export function createFileTree(
 	let refreshTimer = $state<ReturnType<typeof setInterval> | null>(null);
 	let lastSignature = $state('');
 	let refreshInFlight: Promise<void> | null = null;
+	let wcReady = $state(false);
+	let retryCount = $state(0);
+	const maxRetries = 30; // ~30 seconds with 1s intervals
 
 	let expanded = $state<Record<string, true>>({});
 
@@ -90,11 +38,13 @@ export function createFileTree(
 		return new Set(folders.map((folder) => folder.trim()).filter(Boolean));
 	}
 
-	function pruneExpandedState(nextTree: FileNode[]) {
-		const existingDirectories = collectDirectoryPaths(nextTree);
-		expanded = Object.fromEntries(
-			Object.entries(expanded).filter(([path]) => existingDirectories.has(path))
-		) as Record<string, true>;
+	function isReady() {
+		try {
+			const wc = getWebcontainer();
+			return !!wc;
+		} catch {
+			return false;
+		}
 	}
 
 	async function refresh(options?: { silent?: boolean }) {
@@ -105,16 +55,38 @@ export function createFileTree(
 			error = null;
 
 			try {
-				const nextTree = await readDirRecursive(getWebcontainer(), '.', getWorkspaceRootFolders());
+				const wc = getWebcontainer();
+
+				// Check if WebContainer is ready
+				if (!wc) {
+					throw new Error('WebContainer not initialized');
+				}
+
+				wcReady = true;
+				retryCount = 0;
+
+				const nextTree = await readDirRecursive(wc, '.', getWorkspaceRootFolders());
 				const nextSignature = createSignature(nextTree);
 
 				if (nextSignature !== lastSignature) {
 					tree = nextTree;
 					lastSignature = nextSignature;
-					pruneExpandedState(nextTree);
+					expanded = pruneExpandedStatePure(expanded, nextTree);
 				}
 			} catch (err) {
-				error = toErrorMessage(err);
+				// If WebContainer isn't ready yet, schedule a retry
+				if (!wcReady && retryCount < maxRetries) {
+					retryCount++;
+					if (!options?.silent) {
+						error = `WebContainer not ready (${retryCount}/${maxRetries})`;
+					}
+					// Silently retry in 1 second
+					setTimeout(() => {
+						void refresh({ silent: true });
+					}, 1000);
+				} else {
+					error = toErrorMessage(err);
+				}
 			} finally {
 				refreshInFlight = null;
 				if (!options?.silent) loading = false;
@@ -162,6 +134,7 @@ export function createFileTree(
 		get error() {
 			return error;
 		},
+		isReady,
 		refresh,
 		toggleDir,
 		isExpanded,

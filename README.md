@@ -236,10 +236,34 @@ docker build --platform=linux/amd64 -t sandem:latest .
 
 ---
 
+## Documentation
+
+Complete guides and architecture documentation are in the [**docs/** folder](./docs/):
+
+- **[Getting Started](./docs/00_Getting_Started.md)** — Quick overview
+- **[Architecture Overview](./docs/01_Architecture_Overview.md)** — How Convex ↔ Explorer sync works
+- **[System Architecture](./docs/02_System_Architecture.md)** — Detailed design
+- **[Architecture Details](./docs/03_Architecture_Details.md)** — Deep dive
+- **[Implementation Guide](./docs/04_Implementation_Guide.md)** — Step-by-step integration
+- **[Code Examples](./docs/05_Code_Examples.md)** — Copy-paste patterns
+- **[Diagrams & Flows](./docs/06_Diagrams_and_Flows.md)** — Visual reference
+- **[Progress Tracker](./docs/07_Progress_Tracker.md)** — Track implementation
+- **[What Was Built](./docs/08_What_Was_Built.md)** — Summary of work
+- **[Next Steps](./docs/10_Next_Steps.md)** — Future improvements
+
+→ **Start with [docs/README.md](./docs/README.md)** for navigation guide.
+
+> **Implementation status note:** The Convex ↔ Explorer sync layer has scaffolded controllers/utilities in place and a refactored file tree foundation. Full end-to-end wiring of root-level explorer actions to Convex mutations in the active `/repo` shell is still in progress.
+
+---
+
 ## Recent updates (2026-03-21)
 
-- **docs**: Comprehensive README audit — fixed inaccurate script names (`pnpm e2e` → `pnpm test:e2e`), clarified dev server behavior, added missing command descriptions
-- **docs**: Rewrote project intro with clearer use cases, feature benefits, and simplified architecture explanations
+- **docs**: Reorganized major architecture/implementation docs into [`docs/`](./docs/) with ordered names (`00_...` to `10_...`) and a new docs navigation hub
+- **explorer**: Refactored file tree internals into pure utility helpers (`fileTreeOps`) and added WebContainer readiness retry behavior for smoother startup
+- **explorer**: Added initial Convex sync scaffolding (`createProjectSyncController`, `createExplorerActionsController`, `projectFolderSync`) for root-folder/project convergence
+- **auth proxy**: Added timeout + graceful `504 Gateway Timeout` fallback in SvelteKit auth forwarding handler to reduce abort-related runtime failures
+- **dev server**: Added Monaco sourcemap patching in Vite dev config to suppress invalid sourcemap loader noise
 - Refactored core UI primitives to be more reusable and token-driven
 - Updated `/shop` showcase to demonstrate component variants consistently
 - Restyled `/auth` page with reusable components

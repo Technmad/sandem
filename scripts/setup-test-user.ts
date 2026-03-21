@@ -13,6 +13,38 @@ import { config } from 'dotenv';
 config({ path: '.env.test' });
 
 const SITE_URL = process.env.SITE_URL || 'http://localhost:5173';
+const SKIP_IF_SITE_UNREACHABLE = process.env.SKIP_SETUP_TEST_USER_IF_SITE_UNREACHABLE !== '0';
+
+async function isSiteReachable(url: string) {
+	try {
+		const response = await fetch(url, {
+			method: 'GET',
+			redirect: 'manual'
+		});
+		return response.status > 0;
+	} catch {
+		return false;
+	}
+}
+
+async function assertSiteReachableOrExit() {
+	const healthUrl = `${SITE_URL}/api/auth/session`;
+	const reachable = await isSiteReachable(healthUrl);
+
+	if (reachable) return;
+
+	console.error('⚠️  Could not reach auth endpoint at SITE_URL.');
+	console.error(`   URL: ${healthUrl}`);
+	console.error('   Start your app server first (for example: pnpm run dev:frontend).');
+
+	if (SKIP_IF_SITE_UNREACHABLE) {
+		console.error('   Skipping setup:test-user because server is unavailable.');
+		console.error('   Set SKIP_SETUP_TEST_USER_IF_SITE_UNREACHABLE=0 to fail hard instead.');
+		process.exit(0);
+	}
+
+	process.exit(1);
+}
 
 async function setupTestUser() {
 	const email = process.env.TEST_USER_EMAIL;
@@ -33,6 +65,8 @@ async function setupTestUser() {
 	console.log(`   Name: ${name}`);
 	console.log(`   Site URL: ${SITE_URL}`);
 	console.log('');
+
+	await assertSiteReachableOrExit();
 
 	// Try to sign up the user
 	try {
@@ -89,9 +123,16 @@ async function setupTestUser() {
 		console.error('❌ Error creating test user:', errorData);
 		process.exit(1);
 	} catch (error) {
-		if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
+		if (
+			error instanceof Error &&
+			(error.message.includes('ECONNREFUSED') || error.message.includes('fetch failed'))
+		) {
 			console.error('❌ Error: Could not connect to the server.');
-			console.error('   Make sure your dev server is running: pnpm run dev');
+			console.error('   Make sure your dev server is running: pnpm run dev:frontend');
+			if (SKIP_IF_SITE_UNREACHABLE) {
+				console.error('   Skipping setup:test-user because server is unavailable.');
+				process.exit(0);
+			}
 			process.exit(1);
 		}
 		throw error;

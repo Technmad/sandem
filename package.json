@@ -29,9 +29,11 @@
 		"test:e2e": "cross-env PLAYWRIGHT_BROWSERS_PATH=node_modules/.cache/ms-playwright playwright test",
 		"test:e2e:ui": "playwright test --ui",
 		"setup:test-user": "npx tsx scripts/setup-test-user.ts",
-		"changeset": "changeset",
+		"changeset": "cross-env CHANGESET_NON_INTERACTIVE=1 node scripts/changeset-wrapper.mjs",
+		"changeset:add": "changeset",
 		"version-packages": "changeset version",
-		"release": "changeset publish"
+		"release": "node scripts/release-wrapper.mjs",
+		"release:publish": "changeset publish"
 	},
 	"files": [
 		"dist/svelte",
