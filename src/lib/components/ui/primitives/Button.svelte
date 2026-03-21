@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from 'bits-ui';
 	import type { ButtonRootProps } from 'bits-ui';
-	import type { Tone, Variant } from '$types/ui.js';
+	import type { Tone, Variant } from '$types/ui';
 
 	type ButtonVariant = Extract<Variant, 'default' | 'outline' | 'ghost' | 'link' | 'delete'>;
 

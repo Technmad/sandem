@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { DropdownMenu, type WithoutChild } from 'bits-ui';
 	import type { Snippet } from 'svelte';
-	import type { Tone, Variant } from '$types/ui.js';
-
-	type ChromeVariant = Extract<Variant, 'default' | 'outline' | 'ghost'>;
+	import type { Tone, Variant } from '$types/ui';
+	import { toneMap } from '$types/ui';
 
 	type MenuItem = { label: string; value: string };
 	type MenuGroup = {
@@ -17,7 +16,7 @@
 
 		items?: MenuItem[];
 		groups?: MenuGroup[];
-		variant?: ChromeVariant;
+		variant?: Variant;
 		tone?: Tone;
 		onSelect?: (value: string) => void;
 		contentProps?: WithoutChild<DropdownMenu.ContentProps>;
@@ -37,15 +36,6 @@
 		...rest
 	}: Props = $props();
 
-	const toneMap: Record<Tone, string> = {
-		neutral: 'var(--muted)',
-		accent: 'var(--accent)',
-		success: 'var(--success)',
-		warning: 'var(--warning)',
-		info: 'var(--info)',
-		danger: 'var(--error)'
-	};
-
 	let resolvedGroups = $derived(
 		groups && groups.length > 0
 			? groups
@@ -57,7 +47,13 @@
 
 <div class="dropdown-shell">
 	<DropdownMenu.Root bind:open {...rest}>
-		<DropdownMenu.Trigger class="dropdown-trigger" data-variant={variant} aria-label={label}>
+		<DropdownMenu.Trigger
+			class="dropdown-trigger"
+			data-variant={variant}
+			data-tone={tone}
+			aria-label={label}
+			style={`--dropdown-tone: ${toneMap[tone]};`}
+		>
 			{@render children()}
 		</DropdownMenu.Trigger>
 
@@ -101,18 +97,36 @@
 		justify-content: center;
 		border-radius: 0.5rem;
 		border: 1px solid transparent;
+		font-family: inherit;
+		font-weight: 500;
+		font-size: 0.84rem;
+		padding: 0.45rem 0.8rem;
+		cursor: pointer;
+		transition:
+			background-color var(--time) var(--ease),
+			border-color var(--time) var(--ease),
+			color var(--time) var(--ease);
 	}
 
 	.dropdown-shell :global(.dropdown-trigger[data-variant='default']) {
-		background: var(--fg);
-		border-color: var(--border);
-		color: var(--text);
+		background: color-mix(in srgb, var(--dropdown-tone) 8%, var(--fg));
+		color: color-mix(in srgb, var(--dropdown-tone) 45%, var(--text));
+		border-color: color-mix(in srgb, var(--dropdown-tone) 24%, var(--border));
+	}
+
+	.dropdown-shell :global(.dropdown-trigger[data-variant='default']:hover) {
+		color: color-mix(in srgb, var(--dropdown-tone) 62%, var(--text));
+		background: color-mix(in srgb, var(--dropdown-tone) 15%, var(--fg));
 	}
 
 	.dropdown-shell :global(.dropdown-trigger[data-variant='outline']) {
 		background: transparent;
 		border-color: var(--border);
-		color: var(--text);
+		color: color-mix(in srgb, var(--dropdown-tone) 50%, var(--text));
+	}
+
+	.dropdown-shell :global(.dropdown-trigger[data-variant='outline']:hover) {
+		background: color-mix(in srgb, var(--dropdown-tone) 10%, var(--fg));
 	}
 
 	.dropdown-shell :global(.dropdown-trigger[data-variant='ghost']) {
@@ -120,8 +134,9 @@
 		color: var(--muted);
 	}
 
-	.dropdown-shell :global(.dropdown-trigger:hover) {
-		background: var(--mg);
+	.dropdown-shell :global(.dropdown-trigger[data-variant='ghost']:hover) {
+		background: color-mix(in srgb, var(--dropdown-tone) 8%, transparent);
+		color: color-mix(in srgb, var(--dropdown-tone) 55%, var(--text));
 	}
 
 	.dropdown-shell :global(.dropdown-content) {

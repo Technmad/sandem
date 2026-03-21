@@ -235,13 +235,17 @@
 				<DropDown
 					label="Quick actions"
 					bind:open={dropdownOpen}
+					variant="outline"
+					tone="accent"
 					items={[
 						{ label: 'Open', value: 'open' },
 						{ label: 'Duplicate', value: 'duplicate' },
 						{ label: 'Archive', value: 'archive' }
 					]}
 				>
-					<Button variant="outline" tone="accent">Actions</Button>
+					{#snippet children()}
+						Actions
+					{/snippet}
 				</DropDown>
 
 				<Menubar.Root>

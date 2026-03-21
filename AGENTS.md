@@ -34,6 +34,7 @@ After completing the code, ask the user if they want a playground link. Only cal
 4. **`/repo` Auth Gating**: Demo mode is guest-only. If authenticated, always run repo workspace flow; do not gate by project count.
 5. **Starter Seed on First Visit**: For authenticated owners with zero projects, rely on `ensureStarterProjectForOwner` to create starter content.
 6. **Keep this file current**: Whenever `AGENTS.md` is read during work, update it as needed so it accurately reflects the app’s current behavior, architecture, scripts, and known status.
+7. **Explorer Multi-root Contract**: In authenticated `/repo`, the WebContainer root is a multi-project workspace (`project-*` folders from Convex). Explorer tree should treat those folders as the canonical top-level roots.
 
 ## Styling Architecture (The "Svelte.dev" Way)
 
@@ -76,6 +77,13 @@ Use this checklist when picking up the project in a new session to get productiv
 - Card component shell: `src/lib/components/ui/primitives/Card.svelte`
 - Theme switcher: `src/lib/components/ui/theme/ThemeSwitcher.svelte`
 - IDE route shell: `src/routes/repo/+layout.svelte`, `src/routes/repo/+layout.server.ts`
+- Repo workspace controller (runtime + project orchestration): `src/lib/controllers/workspace/createRepoLayoutController.svelte.ts`
+- App-level SvelteKit error helpers: `src/lib/sveltekit/errors.ts`
+- Lifecycle hooks: `src/lib/hooks/*`
+- Editor pane lifecycle composition: `src/lib/hooks/editor/createEditorLifecycle.svelte.ts`
+- UI command controllers: `src/lib/controllers/*`
+- Runtime/persistence services: `src/lib/services/*`
+- Editor pane pseudo-pure view helpers: `src/lib/utils/editor/editorPaneView.ts`
 - Layout and pages: `src/routes/+layout.svelte`, `src/routes/(home)/*`, `src/routes/repo/*`
 - Project file-tree conversion utility: `src/lib/utils/project/filesystem.ts`
 - Docker status reference: `README.md` (compose exists, root Dockerfile currently missing)
@@ -84,8 +92,15 @@ Use this checklist when picking up the project in a new session to get productiv
 
 - Svelte 5 runes: prefer `$state`, `$props`, `$derived` (avoid legacy `export let` where possible)
 - Use event attributes (`onclick`, `oninput`) instead of legacy `on:` syntax
+- Keep architecture boundaries strict:
+  - `src/lib/hooks/*` = lifecycle/composition hooks only
+  - `src/lib/controllers/*` = UI command orchestration
+  - `src/lib/services/*` = runtime/persistence/integration logic
+  - Do not add compatibility re-export shims under `hooks/*`; import controllers/services directly where needed.
 - Keep interactive states (hover, focus, active) in `src/app.css`; components should be layout-only shells and accept content via `$props` or `#snippet`
 - Theme: controlled by `ThemeSwitcher.svelte`, stored in `localStorage`, and applied via `document.documentElement.dataset.theme`
+- App-wide error shaping/formatting should use `createAppError`, `toAppError`, and `formatAppError` from `src/lib/sveltekit/errors.ts`
+- Explorer: `createFileTree` should filter top-level roots to known workspace project folders when provided; nested files/folders remain fully recursive like VS Code.
 
 ### Workflow tips
 

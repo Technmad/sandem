@@ -8,11 +8,9 @@
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"sourceMap": true,
-		"strict": true,
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext"
+		"strict": true
 	},
-	"include": ["src/**/*", "src/types/**/*", "src/app.d.ts"],
+	"include": ["src/**/*"],
 	"exclude": [
 		"src/convex/auth.ts",
 		"src/convex/http.ts",

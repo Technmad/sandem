@@ -3,23 +3,30 @@
 
 	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
 	import {
-		createAutoSaver,
-		createFileWriter,
-		createEditorShortcuts,
 		createEditorStatus,
-		createEditorRuntime
+		createEditorRuntime,
+		createEditorLifecycle
 	} from '$lib/hooks/editor/index.js';
+	import { createAutoSaver, createFileWriter } from '$lib/services/editor/index.js';
+	import { createEditorShortcuts } from '$lib/controllers/editor/index.js';
 	import {
 		getRootFolder,
 		resolveProjectFileName,
 		toWebContainerPath
 	} from '$lib/utils/project/filesystem.js';
+	import {
+		EDITOR_QUICK_ACTIONS,
+		deriveEditorSaveStatusVariant,
+		deriveEditorTabItems,
+		shouldShowEmptyEditorState
+	} from '$lib/utils/editor/index.js';
 	import Tabs from '$lib/components/ui/primitives/Tabs.svelte';
 	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
 	import { activity } from '$lib/stores/activity/activityStore.svelte.js';
 	import EmptyEditorState from '$lib/components/ui/editor/Empty.svelte';
 	import EditorBreadcrumb from '$lib/components/ui/editor/Breadcrumbs.svelte';
 	import EditorSaveStatus from '$lib/components/ui/editor/SaveStatus.svelte';
+	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
 	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
 	import { collaborationPermissionsStore } from '$lib/stores/collaboration/collaborationStore.svelte.js';
 
@@ -58,7 +65,12 @@
 			autoSaver.triggerAutoSave(projectFileName, content);
 			writeFile(activePath, content);
 		},
-		onStatusSync: () => syncEditorStatusFromModel()
+		onStatusSync: () => lifecycle.syncEditorStatusFromModel()
+	});
+
+	const lifecycle = createEditorLifecycle({
+		runtime,
+		status
 	});
 
 	function toProjectFile(path: string): string {
@@ -69,63 +81,36 @@
 		return toWebContainerPath(rootFolder, projectFileName);
 	}
 
-	function syncActiveEditorModel() {
-		runtime.syncActiveEditorModel();
-	}
-
-	function syncEditorStatusFromModel() {
-		status.syncFromEditor(runtime.getEditor());
-	}
-
 	onMount(() => {
 		return shortcuts.mount();
 	});
 
 	onMount(async () => {
-		await runtime.initialize(element);
-		syncEditorStatusFromModel();
+		await lifecycle.initializeEditor(element);
 	});
 
 	$effect(() => {
 		// Reactive dependency on activeTabPath to trigger sync when it changes
 		void editorStore.activeTabPath;
-		syncActiveEditorModel();
-		syncEditorStatusFromModel();
+		lifecycle.syncAfterActivePathChange();
 	});
 
 	onDestroy(() => {
 		unsubscribePermissions();
 		autoSaver.cleanup();
-		runtime.cleanup();
+		lifecycle.cleanup();
 	});
 
 	// Derive a nice save status label + variant
-	const saveStatusVariant = $derived(
-		autoSaver.status?.toLowerCase().includes('error')
-			? 'error'
-			: autoSaver.status?.toLowerCase().includes('saving')
-				? 'saving'
-				: autoSaver.status
-					? 'saved'
-					: ''
+	const saveStatusVariant = $derived(deriveEditorSaveStatusVariant(autoSaver.status));
+
+	const showEmptyState = $derived(
+		shouldShowEmptyEditorState(editorStore.tabs, editorStore.activeTabPath)
 	);
 
-	const showEmptyState = $derived(editorStore.tabs.length === 0 || !editorStore.activeTabPath);
+	const tabs = $derived(deriveEditorTabItems(editorStore.tabs, editorStore.isActive));
 
-	const tabs = $derived(
-		editorStore.tabs.map((tab) => ({
-			id: tab.path,
-			label: tab.label,
-			active: editorStore.isActive(tab.path),
-			closable: true
-		}))
-	);
-
-	const quickActions = [
-		{ label: 'Focus Search', hint: 'Search files and symbols', keys: ['Ctrl', 'Alt', 'I'] },
-		{ label: 'Show All Commands', hint: 'Open command palette', keys: ['Ctrl', 'Shift', 'P'] },
-		{ label: 'Toggle Terminal', hint: 'Show or hide terminal panel', keys: ['Ctrl', '`'] }
-	] as const;
+	const quickActions = EDITOR_QUICK_ACTIONS;
 </script>
 
 <div class="editor-layout">
@@ -139,10 +124,24 @@
 
 	{#if showEmptyState}
 		<EmptyEditorState {quickActions} />
+	{:else if lifecycle.editorRuntimeError}
+		<ErrorPanel
+			title="Editor failed to start"
+			description="The editor runtime encountered an error. You can retry without refreshing."
+			message={lifecycle.editorRuntimeError}
+			testId="editor-runtime-error"
+			retryLabel={lifecycle.initializingEditor ? 'Retrying…' : 'Retry editor'}
+			retryDisabled={lifecycle.initializingEditor}
+			onRetry={() => void lifecycle.initializeEditor(element)}
+		/>
 	{/if}
 
 	<!-- Monaco editor mount point -->
-	<div class="editor-container" class:hidden={showEmptyState} bind:this={element}></div>
+	<div
+		class="editor-container"
+		class:hidden={showEmptyState || !!lifecycle.editorRuntimeError}
+		bind:this={element}
+	></div>
 </div>
 
 <style>

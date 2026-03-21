@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { AspectRatio, type WithoutChildrenOrChild } from 'bits-ui';
 	import type { Snippet } from 'svelte';
-	import type { Tone, Variant } from '$types/ui.js';
+	import type { Tone, Variant } from '$types/ui';
 
 	type CardVariant = Extract<Variant, 'default' | 'outline' | 'ghost' | 'notched' | 'wide'>;
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
-	import Button from '$lib/components/ui/primitives/Button.svelte';
 	import DropDown from '$lib/components/ui/inputs/DropDown.svelte';
 	import { Ellipsis } from '@lucide/svelte';
 
@@ -75,33 +74,17 @@
 		label="Theme switcher"
 		items={dropdownItems}
 		variant="ghost"
+		tone="neutral"
 		onSelect={(value: string) => {
 			selectTheme(value);
 			open = false;
 		}}
 	>
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="icon"
-			class="theme-trigger"
-			aria-label="Switch theme"
-		>
+		{#snippet children()}
 			<Ellipsis size={18} />
-		</Button>
+		{/snippet}
 	</DropDown>
 {/if}
 
 <style>
-	:global(.theme-trigger) {
-		border-radius: 4px;
-		padding: 0;
-		border: none;
-		background: transparent;
-		color: var(--muted);
-	}
-	:global(.theme-trigger:hover) {
-		background: var(--fg);
-		color: var(--text);
-	}
 </style>

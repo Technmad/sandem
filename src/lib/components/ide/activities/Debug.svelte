@@ -4,7 +4,7 @@
 	import Button from '$lib/components/ui/primitives/Button.svelte';
 	import { Accordion } from 'bits-ui';
 	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
-	import { createDebugActivity } from '$lib/hooks/activity/index.js';
+	import { createDebugActivity } from '$lib/controllers/activity/index.js';
 	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
 	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
 

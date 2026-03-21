@@ -1,10 +1,6 @@
 <script lang="ts">
 	import {
 		ChevronRight,
-		ChevronDown,
-		File,
-		Folder,
-		FolderOpen,
 		RefreshCw,
 		FilePlus,
 		FolderPlus,
@@ -15,22 +11,28 @@
 	} from '@lucide/svelte';
 
 	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
+	import { createProjectFilesSync } from '$lib/services/explorer/index.js';
 	import {
 		createFileTree,
-		type FileNode,
-		createProjectFilesSync,
-		createExplorerActivity
-	} from '$lib/hooks/explorer/index.js';
+		createExplorerActivity,
+		createExplorerPanelController
+	} from '$lib/controllers/explorer/index.js';
+	import { projectFolderName } from '$lib/utils/project/projects.js';
 	import { onMount } from 'svelte';
 	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
 	import Button from '$lib/components/ui/primitives/Button.svelte';
+	import FileTreeView from '$lib/components/ui/editor/FileTreeView.svelte';
 	import ActivityPanel from './ActivityPanel.svelte';
 	import { Accordion } from 'bits-ui';
 
 	const ide = requireIDEContext();
-	const fileTree = createFileTree(ide.getWebcontainer);
+	const fileTree = createFileTree(ide.getWebcontainer, {
+		getWorkspaceRootFolders: () =>
+			(ide.getWorkspaceProjects?.() ?? []).map((project) => projectFolderName(project.id))
+	});
 	const projectSync = createProjectFilesSync({
 		getProject: () => ide.getProject(editorStore.activeTabPath ?? undefined),
+		getProjectForPath: (path: string) => ide.getProject(path),
 		getWebcontainer: ide.getWebcontainer,
 		onRemoteOperationApplied: async () => {
 			await fileTree.refresh({ silent: true });
@@ -45,6 +47,74 @@
 		projectSync
 	});
 
+	const explorerPanel = createExplorerPanelController({
+		getWorkspaceProjects: () => ide.getWorkspaceProjects?.() ?? [],
+		projectFolderName,
+		selectProject: ide.selectProject,
+		createProject: ide.createProject,
+		renameProject: ide.commitRenameProject,
+		deleteProject: ide.confirmDeleteProject,
+		handleFileClick: explorer.handleFileClick,
+		handleDirClick: explorer.handleDirClick,
+		createFolder: explorer.createFolder,
+		renamePath: explorer.renamePath,
+		deletePath: explorer.deletePath,
+		prompt: (message: string, defaultValue?: string) => window.prompt(message, defaultValue),
+		confirm: (message: string) => window.confirm(message)
+	});
+
+	const panelActions = [
+		{
+			key: 'new-file',
+			title: 'New file',
+			ariaLabel: 'New file',
+			onClick: () => void explorer.createFile(),
+			icon: FilePlus
+		},
+		{
+			key: 'new-folder',
+			title: 'New folder',
+			ariaLabel: 'New folder',
+			onClick: () => void explorerPanel.createFolderAction(),
+			icon: FolderPlus
+		},
+		{
+			key: 'rename-path',
+			title: 'Rename path',
+			ariaLabel: 'Rename path',
+			onClick: () => void explorerPanel.renameAction(),
+			icon: FilePenLine
+		},
+		{
+			key: 'delete-path',
+			title: 'Delete path',
+			ariaLabel: 'Delete path',
+			onClick: () => void explorerPanel.deleteAction(),
+			icon: Trash2
+		},
+		{
+			key: 'refresh-explorer',
+			title: 'Refresh explorer',
+			ariaLabel: 'Refresh explorer',
+			onClick: () => void explorer.refreshTree(),
+			icon: RefreshCw
+		},
+		{
+			key: 'toggle-all-folders',
+			title: 'Expand/Collapse all folders',
+			ariaLabel: 'Expand or collapse all folders',
+			onClick: explorer.toggleAllFolders,
+			icon: ChevronsUpDown
+		},
+		{
+			key: 'refresh-and-expand',
+			title: 'Refresh and expand all',
+			ariaLabel: 'More actions',
+			onClick: () => void explorer.refreshAndExpandAll(),
+			icon: Ellipsis
+		}
+	] as const;
+
 	onMount(() => {
 		explorer.start();
 
@@ -56,83 +126,20 @@
 
 <ActivityPanel title="EXPLORER">
 	{#snippet actions()}
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="icon"
-			class="panel-icon-action"
-			title="New file"
-			aria-label="New file"
-			onclick={() => void explorer.createFile()}
-		>
-			<FilePlus size={12} strokeWidth={1.75} />
-		</Button>
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="icon"
-			class="panel-icon-action"
-			title="New folder"
-			aria-label="New folder"
-			onclick={() => void explorer.createFolder()}
-		>
-			<FolderPlus size={12} strokeWidth={1.75} />
-		</Button>
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="icon"
-			class="panel-icon-action"
-			title="Rename path"
-			aria-label="Rename path"
-			onclick={() => void explorer.renamePath()}
-		>
-			<FilePenLine size={12} strokeWidth={1.75} />
-		</Button>
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="icon"
-			class="panel-icon-action"
-			title="Delete path"
-			aria-label="Delete path"
-			onclick={() => void explorer.deletePath()}
-		>
-			<Trash2 size={12} strokeWidth={1.75} />
-		</Button>
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="icon"
-			class="panel-icon-action"
-			title="Refresh explorer"
-			aria-label="Refresh explorer"
-			onclick={() => void explorer.refreshTree()}
-		>
-			<RefreshCw size={12} strokeWidth={1.75} />
-		</Button>
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="icon"
-			class="panel-icon-action"
-			title="Expand/Collapse all folders"
-			aria-label="Expand or collapse all folders"
-			onclick={explorer.toggleAllFolders}
-		>
-			<ChevronsUpDown size={12} strokeWidth={1.75} />
-		</Button>
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="icon"
-			class="panel-icon-action"
-			title="Refresh and expand all"
-			aria-label="More actions"
-			onclick={() => void explorer.refreshAndExpandAll()}
-		>
-			<Ellipsis size={12} strokeWidth={1.75} />
-		</Button>
+		{#each panelActions as action (action.key)}
+			<Button
+				variant="ghost"
+				tone="neutral"
+				size="icon"
+				class="panel-icon-action"
+				title={action.title}
+				aria-label={action.ariaLabel}
+				onclick={action.onClick}
+			>
+				{@const Icon = action.icon}
+				<Icon size={12} strokeWidth={1.75} />
+			</Button>
+		{/each}
 	{/snippet}
 
 	<Accordion.Root type="multiple" class="explorer-accordion">
@@ -190,11 +197,14 @@
 					{:else if fileTree.tree.length === 0}
 						<div class="status-msg">No files found.</div>
 					{:else}
-						<div class="tree" role="tree">
-							{#each fileTree.tree as node (node.path)}
-								{@render treeNode(node)}
-							{/each}
-						</div>
+						<FileTreeView
+							nodes={fileTree.tree}
+							selectedPath={explorerPanel.selectedTreePath}
+							isExpanded={fileTree.isExpanded}
+							isFileActive={(path) => editorStore.isActive(path)}
+							onDirClick={explorerPanel.handleDirRowClick}
+							onFileClick={explorerPanel.handleFileRowClick}
+						/>
 					{/if}
 				</Accordion.Content>
 			</Accordion.Item>
@@ -276,66 +286,6 @@
 		</div>
 	</Accordion.Root>
 </ActivityPanel>
-
-{#snippet treeNode(node: FileNode)}
-	{#if node.type === 'directory'}
-		{@const open = fileTree.isExpanded(node.path)}
-
-		<Button
-			variant="ghost"
-			tone="neutral"
-			size="sm"
-			justify="start"
-			class={`tree-row ${node.depth === 0 ? 'root' : ''} ${open ? 'open' : ''}`}
-			style={`--depth: ${node.depth};`}
-			onclick={() => explorer.handleDirClick(node)}
-			role="treeitem"
-			aria-expanded={open}
-		>
-			<span class="caret" aria-hidden="true">
-				{#if open}
-					<ChevronDown size={12} strokeWidth={1.9} />
-				{:else}
-					<ChevronRight size={12} strokeWidth={1.9} />
-				{/if}
-			</span>
-			<span class="node-icon folder-icon" aria-hidden="true">
-				{#if open}
-					<FolderOpen size={12} strokeWidth={1.9} />
-				{:else}
-					<Folder size={12} strokeWidth={1.9} />
-				{/if}
-			</span>
-			<span class="node-label">{node.name}</span>
-		</Button>
-
-		{#if open && node.children}
-			{#each node.children as child (child.path)}
-				{@render treeNode(child)}
-			{/each}
-		{/if}
-	{:else}
-		{@const active = editorStore.isActive(node.path)}
-
-		<Button
-			variant={active ? 'default' : 'ghost'}
-			tone={active ? 'accent' : 'neutral'}
-			size="sm"
-			justify="start"
-			class={`tree-row ${active ? 'active' : ''}`}
-			style={`--depth: ${node.depth};`}
-			onclick={() => explorer.handleFileClick(node)}
-			role="treeitem"
-			aria-current={active ? 'true' : undefined}
-		>
-			<span class="caret" aria-hidden="true"></span>
-			<span class="node-icon file-icon" aria-hidden="true">
-				<File size={12} strokeWidth={1.9} />
-			</span>
-			<span class="node-label">{node.name}</span>
-		</Button>
-	{/if}
-{/snippet}
 
 <style>
 	/* ── Explorer shell ─────────────────────────────────────── */
@@ -458,109 +408,5 @@
 
 	.status-msg.error {
 		color: var(--error);
-	}
-
-	/* ── File tree ──────────────────────────────────────────── */
-	.tree {
-		flex: 1;
-		overflow-y: auto;
-		overflow-x: hidden;
-		scrollbar-width: thin;
-		scrollbar-color: var(--border) transparent;
-		padding: 2px 0;
-	}
-
-	.tree::-webkit-scrollbar {
-		width: 4px;
-	}
-
-	.tree::-webkit-scrollbar-thumb {
-		background: var(--border);
-		border-radius: 2px;
-	}
-
-	/* Tree row buttons */
-	:global([data-button-root].tree-row) {
-		display: flex;
-		align-items: center;
-		gap: 3px;
-		padding-left: calc(8px + var(--depth, 0) * 14px);
-		padding-right: 8px;
-		height: 22px;
-		white-space: nowrap;
-		overflow: hidden;
-		width: 100%;
-		border-radius: 0;
-		font-size: 12px;
-		font-family: 'Segoe UI', system-ui, sans-serif;
-	}
-
-	:global([data-button-root][data-size='sm'][data-variant='ghost'].tree-row),
-	:global([data-button-root][data-size='sm'][data-variant='default'].tree-row) {
-		padding-left: calc(8px + var(--depth, 0) * 14px);
-		padding-right: 8px;
-	}
-
-	:global(.tree-row.root) {
-		color: var(--text);
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		font-size: 11px;
-		height: 26px;
-	}
-
-	/* Hover highlight — full-width bar like VSCode */
-	:global(.tree-row:hover) {
-		background: color-mix(in srgb, var(--fg) 70%, transparent);
-	}
-
-	:global(.tree-row.active) {
-		background: color-mix(in srgb, var(--accent) 15%, transparent);
-	}
-
-	/* ── Caret / icon / label ───────────────────────────────── */
-	.caret {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 14px;
-		height: 14px;
-		flex-shrink: 0;
-		color: var(--muted);
-		opacity: 0.7;
-	}
-
-	.node-icon {
-		display: flex;
-		align-items: center;
-		flex-shrink: 0;
-		color: var(--muted);
-		transition: color var(--time) var(--ease);
-	}
-
-	/* Folder icon turns accent on hover / when open / at root */
-	:global(.tree-row:hover) .folder-icon,
-	:global(.tree-row.open) .folder-icon,
-	:global(.tree-row.root) .folder-icon {
-		color: var(--accent);
-	}
-
-	/* File icon brightens when hovered or active */
-	:global(.tree-row:hover) .file-icon,
-	:global(.tree-row.active) .file-icon {
-		color: var(--highlight);
-	}
-
-	.node-label {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		line-height: 1;
-		font-size: 12px;
-	}
-
-	:global(.tree-row.root) .node-label {
-		font-size: 11px;
 	}
 </style>

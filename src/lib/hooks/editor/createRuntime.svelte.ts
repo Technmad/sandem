@@ -2,14 +2,16 @@ import * as Y from 'yjs';
 import type * as Monaco from 'monaco-editor';
 import type { IDEProject } from '$types/projects.js';
 import type { EditorRuntimeDependencies } from '$types/hooks.js';
-import { createCollaboration, type CollaborationSession } from './createCollaboration.svelte.js';
 import {
+	createCollaboration,
+	type CollaborationSession,
 	type ModelBinding,
 	destroyModelBindings,
 	createOfflineModels,
-	createModelForPath
-} from './createModelBindings.svelte.js';
-import { createMonacoInstance, MONACO_OPTIONS } from './createMonacoConfig.svelte.js';
+	createModelForPath,
+	createMonacoInstance,
+	MONACO_OPTIONS
+} from '$lib/services/editor/index.js';
 
 export function createEditorRuntime(deps: EditorRuntimeDependencies) {
 	let editor: Monaco.editor.IStandaloneCodeEditor | undefined;
@@ -126,7 +128,7 @@ export function createEditorRuntime(deps: EditorRuntimeDependencies) {
 				seedProjectFromConvex();
 				scheduleSnapshotPersist(ydoc ?? session!.ydoc);
 			},
-			onYDocUpdate: (nextYDoc, origin) => {
+			onYDocUpdate: (nextYDoc: Y.Doc, origin: unknown) => {
 				if (!synced || origin === 'seed') return;
 				const activePath = deps.getActivePath();
 				if (!activePath) return;
@@ -153,7 +155,11 @@ export function createEditorRuntime(deps: EditorRuntimeDependencies) {
 
 	async function initialize(element: HTMLDivElement) {
 		instance = await createMonacoInstance();
-		editor = instance.editor.create(element, MONACO_OPTIONS);
+		if (!instance) {
+			throw new Error('Monaco failed to initialize.');
+		}
+		const monaco = instance;
+		editor = monaco.editor.create(element, MONACO_OPTIONS);
 
 		setupStatusListeners();
 

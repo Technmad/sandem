@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { activity, type TabId } from '$lib/stores/activity/activityStore.svelte.js';
 	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
-	import { createAppMenuController } from '$lib/hooks/workspace/index.js';
+	import { createMenuController } from '$lib/controllers/workspace/index.js';
 
 	interface Props {
 		menus: string[];
@@ -18,7 +18,7 @@
 		if (panels) panels.leftPane = true;
 	}
 
-	const controller = createAppMenuController({
+	const controller = createMenuController({
 		navigate: (path) => void goto(path),
 		setActivityTab,
 		toggleLeftPane: () => {
@@ -77,7 +77,7 @@
 						{:else}
 							<button
 								class="menu-action"
-								class:highlighted={controller.highlightedIndex === index}
+								class:highlighted={controller.highlighted === index}
 								role="menuitem"
 								onmouseenter={() => controller.onItemHover(index)}
 								onclick={() => controller.execute(action)}

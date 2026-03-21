@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
 	import { createChatPane } from '$lib/hooks/runtime/index.js';
+	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
+	import { createErrorReporter } from '$lib/sveltekit/index.js';
 
 	const ide = requireIDEContext();
 	const workspaceId = ide.getEntryPath().split('/')[0] ?? 'workspace';
@@ -11,17 +13,43 @@
 		currentUser: 'You'
 	});
 
+	let chatError = $state<string | null>(null);
+	const reportChatError = createErrorReporter((next) => {
+		chatError = next;
+	});
+
+	async function initChat() {
+		chatError = null;
+		try {
+			await chat.init();
+		} catch (error) {
+			reportChatError('Failed to initialize chat.', error);
+		}
+	}
+
 	onMount(async () => {
-		await chat.init();
+		await initChat();
 	});
 
 	function onSubmit(event: SubmitEvent) {
 		event.preventDefault();
-		void chat.submit();
+		void (async () => {
+			try {
+				await chat.submit();
+			} catch (error) {
+				reportChatError('Failed to send chat message.', error);
+			}
+		})();
 	}
 
 	function onInput(event: Event) {
-		void chat.updateDraft((event.currentTarget as HTMLInputElement).value);
+		void (async () => {
+			try {
+				await chat.updateDraft((event.currentTarget as HTMLInputElement).value);
+			} catch (error) {
+				reportChatError('Failed to update message draft.', error);
+			}
+		})();
 	}
 
 	function formatTime(timestamp: number) {
@@ -33,7 +61,17 @@
 	<div class="chat-header">Chat</div>
 
 	<div class="chat-list" role="log" aria-live="polite">
-		{#if chat.messages.length === 0}
+		{#if chatError}
+			<ErrorPanel
+				title="Chat unavailable"
+				description="The chat pane hit an error. Retry without refreshing."
+				message={chatError}
+				testId="chat-pane-error"
+				retryLabel="Retry chat"
+				onRetry={() => void initChat()}
+				compact
+			/>
+		{:else if chat.messages.length === 0}
 			<p class="chat-empty">No messages yet. Start the thread.</p>
 		{:else}
 			{#each chat.messages as message (message.id)}

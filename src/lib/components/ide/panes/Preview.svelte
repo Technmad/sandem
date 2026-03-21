@@ -1,11 +1,35 @@
 <script lang="ts">
 	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
 	import { createPreview } from '$lib/hooks/runtime/index.js';
+	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
+	import { createErrorReporter } from '$lib/sveltekit/index.js';
 
 	const ide = requireIDEContext();
 
 	// createPreview (not usePreview — that export doesn't exist)
 	const preview = createPreview(ide.getWebcontainer);
+	let previewError = $state<string | null>(null);
+
+	const reportPreviewError = createErrorReporter((next) => {
+		previewError = next;
+	});
+
+	function startPreviewListener() {
+		previewError = null;
+		try {
+			preview.listenForServer();
+		} catch (error) {
+			reportPreviewError('Failed to subscribe to preview server events.', error);
+		}
+	}
+
+	function reloadPreview() {
+		try {
+			preview.reload();
+		} catch (error) {
+			reportPreviewError('Failed to reload preview.', error);
+		}
+	}
 
 	// Start listening as soon as the container is available.
 	// Because we're inside the {#if project.data && webcontainerInstance} gate
@@ -13,13 +37,13 @@
 	// We use $effect instead of onMount so it re-runs if the container is
 	// ever replaced (e.g. hot-reload in dev).
 	$effect(() => {
-		preview.listenForServer();
+		startPreviewListener();
 	});
 </script>
 
 <div class="preview-shell">
 	<div class="browser-toolbar">
-		<button class="icon-btn" onclick={preview.reload} disabled={!preview.url} aria-label="Refresh">
+		<button class="icon-btn" onclick={reloadPreview} disabled={!preview.url} aria-label="Refresh">
 			<!-- Refresh icon -->
 			<svg
 				width="14"
@@ -67,7 +91,17 @@
 	</div>
 
 	<div class="iframe-container">
-		{#if preview.url}
+		{#if previewError}
+			<ErrorPanel
+				title="Preview unavailable"
+				description="The preview pane could not connect to the runtime."
+				message={previewError}
+				testId="preview-pane-error"
+				retryLabel="Retry preview"
+				onRetry={startPreviewListener}
+				compact
+			/>
+		{:else if preview.url}
 			{#key preview.key}
 				<iframe title="WebContainer Preview" src={preview.url} allow="cross-origin-isolated"
 				></iframe>
@@ -180,6 +214,7 @@
 		border-radius: 50%;
 		animation: spin 0.9s linear infinite;
 	}
+
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);

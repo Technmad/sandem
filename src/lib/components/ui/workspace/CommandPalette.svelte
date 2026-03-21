@@ -4,7 +4,7 @@
 	import { Search, ChevronRight } from '@lucide/svelte';
 	import { activity, type TabId } from '$lib/stores/activity/activityStore.svelte.js';
 	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
-	import { createCommandPaletteController } from '$lib/hooks/workspace/index.js';
+	import { createCommandPaletteController } from '$lib/controllers/workspace/index.js';
 
 	const panels = getPanelsContext();
 	let inputEl: HTMLInputElement | null = $state(null);

@@ -1,4 +1,3 @@
-// src/lib/hooks/runtime/createProjectMounter.svelte.ts
 import type { WebContainer } from '@webcontainer/api';
 import type { Doc } from '$convex/_generated/dataModel.js';
 

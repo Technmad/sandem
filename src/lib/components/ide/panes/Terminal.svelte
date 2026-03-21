@@ -6,13 +6,15 @@
 		Terminal
 	} from '@battlefieldduck/xterm-svelte';
 	import { onDestroy } from 'svelte';
-	import { createShellProcess } from '$lib/hooks/runtime/index.js';
+	import { createShellProcess } from '$lib/services/runtime/index.js';
+	import { createErrorReporter } from '$lib/sveltekit/index.js';
 	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
 	import {
 		appendTerminalAudit,
 		collaborationPermissionsStore
 	} from '$lib/stores/collaboration/collaborationStore.svelte.js';
 	import Tabs from '$lib/components/ui/primitives/Tabs.svelte';
+	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
 	import Button from '$lib/components/ui/primitives/Button.svelte';
 	import {
 		Trash2,
@@ -54,6 +56,10 @@
 	type PanelTab = (typeof panelTabs)[number];
 	let activeTab = $state<PanelTab>('TERMINAL');
 	let isTerminalToolbarOpen = $state(true);
+	let terminalError = $state<string | null>(null);
+	const reportTerminalError = createErrorReporter((next) => {
+		terminalError = next;
+	});
 	let themeObserver: MutationObserver | undefined;
 
 	const options: ITerminalOptions & ITerminalInitOnlyOptions = {
@@ -91,15 +97,25 @@
 
 	async function handleLoad() {
 		if (!terminalInstance) return;
-		syncTerminalTheme();
-		watchThemeChanges();
-		await shell.initShell(terminalInstance);
+		try {
+			terminalError = null;
+			syncTerminalTheme();
+			watchThemeChanges();
+			await shell.initShell(terminalInstance);
+		} catch (error) {
+			reportTerminalError('Failed to initialize terminal shell.', error);
+		}
 	}
 
 	async function ensureShell() {
 		if (!terminalInstance) return;
-		if (!shell.isReady) {
-			await shell.initShell(terminalInstance);
+		try {
+			terminalError = null;
+			if (!shell.isReady) {
+				await shell.initShell(terminalInstance);
+			}
+		} catch (error) {
+			reportTerminalError('Failed to start terminal shell.', error);
 		}
 	}
 
@@ -115,11 +131,28 @@
 	}
 
 	async function restartTerminal() {
-		await shell.restartShell();
+		try {
+			terminalError = null;
+			await shell.restartShell();
+		} catch (error) {
+			reportTerminalError('Failed to restart terminal shell.', error);
+		}
 	}
 
 	function killTerminal() {
-		shell.killShell();
+		try {
+			shell.killShell();
+		} catch (error) {
+			reportTerminalError('Failed to stop terminal shell.', error);
+		}
+	}
+
+	function handleTerminalInput(data: string) {
+		try {
+			shell.writeInput(data);
+		} catch (error) {
+			reportTerminalError('Failed to send input to terminal process.', error);
+		}
 	}
 
 	function toggleMaximize() {
@@ -271,14 +304,28 @@
 	{/if}
 	<div class="terminal-container">
 		{#if activeTab === 'TERMINAL'}
-			{#if !canExecute}
+			{#if terminalError}
+				<ErrorPanel
+					title="Terminal unavailable"
+					description="The terminal pane encountered an error."
+					message={terminalError}
+					testId="terminal-pane-error"
+					compact
+				>
+					{#snippet actions()}
+						<Button size="sm" variant="ghost" onclick={() => void ensureShell()}>
+							Retry terminal
+						</Button>
+					{/snippet}
+				</ErrorPanel>
+			{:else if !canExecute}
 				<div class="panel-empty-state">Terminal is read-only for viewers.</div>
 			{:else}
 				<Xterm
 					bind:terminal={terminalInstance}
 					{options}
 					onLoad={handleLoad}
-					onData={(data) => shell.writeInput(data)}
+					onData={handleTerminalInput}
 				/>
 			{/if}
 		{:else}

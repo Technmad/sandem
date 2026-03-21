@@ -1,28 +1,22 @@
 # Hooks organization
 
-> Last updated: 2026-03-20
+> Last updated: 2026-03-21
 
-Hooks are grouped by feature area with small barrel exports:
+Hooks are now lifecycle/composition only:
 
-- `activity/` → activity panel behavior (`explorer`, `search`, `git`, `debug` controls)
-- `editor/` → editor runtime and persistence (`autosave`, `status`, `shortcuts`, `writer`)
-- `explorer/` → file tree and file-sync behavior
-- `runtime/` → WebContainer runtime hooks (`preview`, `shell`, project mounting)
+- `editor/` → editor lifecycle hooks (`createEditorRuntime`, `createEditorStatus`)
+- `runtime/` → pane lifecycle hooks (`createPreview`, `createChatPane`)
+
+## Architecture split
+
+- `src/lib/hooks/*` → UI-composition lifecycle pieces
+- `src/lib/controllers/*` → UI command orchestration
+- `src/lib/services/*` → persistence/runtime APIs
 
 ## Import style
 
-Prefer grouped imports:
-
 - `import { createEditorRuntime } from '$lib/hooks/editor/index.js'`
-- `import { createExplorerActivity } from '$lib/hooks/explorer/index.js'`
-- `import { createGitActivity } from '$lib/hooks/activity/index.js'`
-- `import { createShellProcess } from '$lib/hooks/runtime/index.js'`
-
-Or import from the root barrel when appropriate:
-
-- `import { createPreview } from '$lib/hooks/index.js'`
-
-## Notes
-
-- Existing `create*.svelte.ts` hook files remain the source of truth.
-- Barrels are thin re-exports only, to keep refactors low-risk and imports consistent.
+- `import { createExplorerActivity } from '$lib/controllers/explorer/index.js'`
+- `import { createCommandPaletteController } from '$lib/controllers/workspace/index.js'`
+- `import { createAutoSaver } from '$lib/services/editor/index.js'`
+- `import { createShellProcess } from '$lib/services/runtime/index.js'`

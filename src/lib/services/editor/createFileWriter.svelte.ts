@@ -1,4 +1,3 @@
-// src/lib/hooks/editor/createFileWriter.svelte.ts
 import type { WebContainer } from '@webcontainer/api';
 
 async function ensureParentDir(wc: WebContainer, fileName: string) {

@@ -7,6 +7,8 @@ import { ConvexHttpClient, type ConvexClientOptions } from 'convex/browser';
 import type { CreateAuth, GenericCtx } from '@convex-dev/better-auth';
 import type { GenericDataModel } from 'convex/server';
 
+export * from './errors.js';
+
 /**
  * Initial auth state that can be passed from server to client.
  * Used to avoid loading flash on initial page render.

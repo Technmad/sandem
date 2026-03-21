@@ -1,16 +1,9 @@
 <script lang="ts">
 	import Preview from '../panes/Preview.svelte';
 	import Chat from '../panes/Chat.svelte';
-	import { createRightPaneController, type RightPaneTab } from '$lib/hooks/workspace/index.js';
-
-	const rightMap = {
-		vscode: Preview,
-		chat: Chat
-	} satisfies Record<RightPaneTab, unknown>;
-
-	const fallbackPanel = Preview;
+	import { createRightPaneController } from '$lib/controllers/workspace/index.js';
 	const controller = createRightPaneController();
-	let ActivePanel = $derived(rightMap[controller.tab] ?? fallbackPanel);
+	let ActivePanel = $derived(controller.tab === 'chat' ? Chat : Preview);
 </script>
 
 <aside>

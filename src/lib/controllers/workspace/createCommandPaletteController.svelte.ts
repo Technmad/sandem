@@ -1,14 +1,14 @@
 import type { TabId } from '$lib/stores/activity/activityStore.svelte.js';
-import type { CommandItem } from '../../../types/commands.js';
-import type { ActivityPanels } from '../../../types/hooks.js';
+import type { CommandItem } from '$types/commands.js';
+import type { ActivityPanels } from '$types/hooks.js';
 
-type CreateCommandPaletteControllerOptions = {
+type Options = {
 	navigate: (path: string) => void;
 	getPanels: () => ActivityPanels | undefined;
 	setActivityTab: (tab: TabId) => void;
 };
 
-export function createCommandPaletteController(options: CreateCommandPaletteControllerOptions) {
+export function createCommandPaletteController(options: Options) {
 	let isOpen = $state(false);
 	let query = $state('');
 	let selectedIndex = $state(0);

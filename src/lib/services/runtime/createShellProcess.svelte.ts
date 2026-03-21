@@ -1,4 +1,3 @@
-// src/lib/hooks/runtime/createShellProcess.svelte.ts
 import { XtermAddon } from '@battlefieldduck/xterm-svelte';
 import type { Terminal } from '@battlefieldduck/xterm-svelte';
 import type { WebContainer, WebContainerProcess } from '@webcontainer/api';

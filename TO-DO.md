@@ -69,6 +69,59 @@
 
 ---
 
+## 🏆 Improvements
+
+### Type safety & validation
+
+- [ ] **End-to-end type safety** — Convex schema → runtime validators → stores → components (use Zod for boundary validation)
+- [ ] **Project validator service** — `createProjectValidator()` ensures invalid projects never reach components
+- [ ] **Schema inference** — Generate TypeScript types directly from Convex schema to avoid duplication
+
+### State machines & complex flows
+
+- [ ] **Editor state machine** — Explicit states (idle, loading, editing, saving, error) instead of free-form booleans
+- [ ] **File operations state machine** — Create/rename/delete operations with atomic transitions
+- [ ] **Authentication state machine** — Guest → loading → authenticated/error flow enforcement
+
+### Error handling & recovery
+
+- [ ] **Error boundary service** — `createErrorRecovery()` captures errors, shows UI, auto-retries after 3s
+- [ ] **Graceful degradation** — Fallback to offline mode when WebContainer/collaboration unavailable
+- [ ] **Conflict resolution UI** — When optimistic write conflicts with server version, show merge interface
+
+### Data sync & consistency
+
+- [ ] **Optimistic file writer** — Client writes optimistically, resolves server conflicts
+- [ ] **Conflict detection** — Detect version mismatch on save, prevent silent data loss
+- [ ] **Batch mutations** — Combine rapid file changes into single Convex mutation
+
+### Performance & monitoring
+
+- [ ] **Performance monitor service** — `createPerformanceMonitor()` measures slow operations (>1s threshold)
+- [ ] **Auto-save batching** — Group rapid changes within 500ms window before persisting
+- [ ] **Lazy load Monaco** — Defer editor script until user opens file (not at boot)
+
+### Testing & DX
+
+- [ ] **Service unit tests** — Test `createAutoSaver`, `createOptimisticFileWriter` with mock Convex
+- [ ] **Type-enforced APIs** — Make it impossible to call functions without required params (JSDoc + TypeScript)
+- [ ] **Error case coverage** — Test network failures, timeouts, conflict scenarios
+
+### Accessibility & UX
+
+- [ ] **Keyboard navigation** — Arrow keys in file tree, Tab through panes, Enter to open files
+- [ ] **ARIA labels** — All interactive components have proper `aria-label`, `role`, `aria-live` attributes
+- [ ] **Focus management** — Trap focus in modal dialogs, restore focus on close
+- [ ] **Screen reader testing** — Verify editor state changes announced to assistive tech
+
+### Developer experience
+
+- [ ] **ARCHITECTURE.md** — Document data flow, module boundaries, and patterns for new contributors
+- [ ] **JSDoc comments** — Every service/controller creator function has examples and type hints
+- [ ] **Error messages** — Helpful, actionable error text (not "Error: undefined")
+
+---
+
 ## 🔧 Needs fixing / polish
 
 - [ ] **Root Dockerfile missing** — `compose.yaml` references `Dockerfile`, so `docker compose up --build` fails until Dockerfile is added
@@ -82,6 +135,7 @@
 
 ### Editor enhancements
 
+- [ ] Make a Discord activity component that renders a dynamic discrod.md file to show servers
 - [ ] Monaco IntelliSense / richer TS language features in workspace templates
 - [ ] Collaborative cursors with user avatars
 - [ ] Find & replace panel
@@ -100,6 +154,7 @@
 - [ ] Guest share links (read-only or scoped write permissions)
 - [ ] Custom run commands UI (not just fixed script flow)
 - [ ] NPM scripts/tasks panel backed by real package.json parsing
+- [ ] Make preview component a full browser experience inside the webcontainer
 
 ### Infrastructure
 

@@ -1,4 +1,3 @@
-// src/lib/hooks/editor/createAutoSaver.svelte.ts
 import { useConvexClient } from 'convex-svelte';
 import { api } from '$convex/_generated/api.js';
 import { resolveProjectFileName } from '$lib/utils/project/filesystem.js';

@@ -13,6 +13,20 @@ interface IDEContext {
 	// Returns the full WC path of the file that should be opened on first load,
 	// e.g. "demo/App.jsx" or "my-project/src/App.jsx".
 	getEntryPath: () => string;
+	// Optional workspace project controls (used by Explorer in /repo).
+	getWorkspaceProjects?: () => Array<{ id: string; title: string }>;
+	getActiveProjectId?: () => string | null;
+	getRenamingProjectId?: () => string | null;
+	getPendingDeleteProjectId?: () => string | null;
+	getMutatingProjectId?: () => string | null;
+	isCreatingProject?: () => boolean;
+	createProject?: () => Promise<void>;
+	selectProject?: (projectId: string) => void;
+	startRenameProject?: (projectId: string) => void;
+	cancelRenameProject?: () => void;
+	commitRenameProject?: (projectId: string, title: string) => Promise<void>;
+	requestDeleteProject?: (projectId: string) => void;
+	confirmDeleteProject?: (projectId: string) => Promise<void>;
 }
 
 export function setIDEContext(context: IDEContext) {

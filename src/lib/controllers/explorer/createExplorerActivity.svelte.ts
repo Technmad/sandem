@@ -1,6 +1,6 @@
 import type { WebContainer } from '@webcontainer/api';
 import { getRootFolder } from '$lib/utils/project/filesystem.js';
-import type { FileNode } from './createFileTree.svelte.js';
+import type { FileNode } from '$types/editor.js';
 import type { ExplorerActivityDeps } from '../../../types/hooks.js';
 
 export function createExplorerActivity(deps: ExplorerActivityDeps) {
@@ -23,6 +23,12 @@ export function createExplorerActivity(deps: ExplorerActivityDeps) {
 	function normalizeToProjectPath(input: string) {
 		const value = input.trim().replace(/^\/+/, '');
 		if (!value) return '';
+
+		const firstSegment = value.split('/')[0] ?? '';
+		const isKnownWorkspaceRoot = deps.fileTree.tree.some(
+			(node) => node.depth === 0 && node.type === 'directory' && node.name === firstSegment
+		);
+		if (isKnownWorkspaceRoot) return value;
 
 		const root = getProjectRootPath();
 		if (value.startsWith(`${root}/`) || value === root) return value;

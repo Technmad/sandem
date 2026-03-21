@@ -4,7 +4,7 @@
 	import { activity, tools, type TabId } from '$lib/stores/activity/activityStore.svelte.js';
 	import type { IDEPanels } from '$lib/stores/panel/panelStore.svelte.js';
 	import Button from '$lib/components/ui/primitives/Button.svelte';
-	import { createActivityBarController } from '$lib/hooks/activity/index.js';
+	import { createActivityBarController } from '$lib/controllers/activity/index.js';
 
 	interface Props {
 		panels: IDEPanels;

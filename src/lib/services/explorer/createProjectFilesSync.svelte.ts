@@ -14,6 +14,7 @@ type FsEvent = Extract<Liveblocks['RoomEvent'], { type: 'fs-op' }>;
 
 type CreateProjectFilesSyncOptions = {
 	getProject: () => IDEProject | undefined;
+	getProjectForPath?: (path: string) => IDEProject | undefined;
 	getWebcontainer: () => WebContainer;
 	onRemoteOperationApplied?: () => Promise<void> | void;
 };
@@ -34,6 +35,7 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 	let leaveRoom: (() => void) | undefined;
 	let roomRef: ReturnType<ReturnType<typeof getLiveblocksClient>['enterRoom']>['room'] | undefined;
 	let unsubscribeEvents: (() => void) | undefined;
+	let currentRoomId: string | null = null;
 	const seenOperationIds = new Set<string>();
 
 	function canWrite() {
@@ -47,6 +49,41 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 	function getProjectId(project: IDEProject | undefined): ProjectId | null {
 		const id = (project as { _id?: ProjectId } | undefined)?._id;
 		return id ?? null;
+	}
+
+	function resolveProject(path?: string): IDEProject | undefined {
+		if (path) {
+			const byPath = options.getProjectForPath?.(path);
+			if (byPath) return byPath;
+		}
+
+		return options.getProject();
+	}
+
+	function ensureRoomForProject(project: IDEProject | undefined) {
+		if (!project?.room) return;
+		if (currentRoomId === project.room && roomRef) return;
+
+		unsubscribeEvents?.();
+		unsubscribeEvents = undefined;
+		leaveRoom?.();
+		leaveRoom = undefined;
+		roomRef = undefined;
+
+		const client = getLiveblocksClient();
+		const entered = client.enterRoom(project.room, {
+			initialPresence: { cursor: null, selection: null }
+		});
+
+		leaveRoom = entered.leave;
+		roomRef = entered.room;
+		currentRoomId = project.room;
+
+		unsubscribeEvents = roomRef.subscribe('event', ({ event }) => {
+			if (isFsEvent(event)) {
+				void applyRemoteFsOperation(event);
+			}
+		});
 	}
 
 	function isFsEvent(value: unknown): value is FsEvent {
@@ -65,17 +102,17 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 		);
 	}
 
-	async function persistProjectFiles(nextFiles: ProjectFile[]) {
-		const project = options.getProject();
-		const projectId = getProjectId(project);
-		if (!convexClient || !project || !projectId) return;
+	async function persistProjectFiles(nextFiles: ProjectFile[], project?: IDEProject) {
+		const targetProject = project ?? options.getProject();
+		const projectId = getProjectId(targetProject);
+		if (!convexClient || !targetProject || !projectId) return;
 
 		await convexClient.mutation(api.projects.updateProject, {
 			id: projectId as ProjectId,
 			files: nextFiles
 		});
 
-		(project as unknown as MutableProject).files = nextFiles;
+		(targetProject as unknown as MutableProject).files = nextFiles;
 	}
 
 	async function applyRemoteFsOperation(event: FsEvent) {
@@ -83,7 +120,7 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 		seenOperationIds.add(event.opId);
 
 		const wc = options.getWebcontainer();
-		const project = options.getProject();
+		const project = resolveProject(event.path);
 		if (!project) return;
 
 		if (event.op === 'create') {
@@ -107,7 +144,7 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 							{ name: fileName, contents: content }
 						];
 
-				await persistProjectFiles(nextFiles);
+				await persistProjectFiles(nextFiles, project);
 			}
 		}
 
@@ -120,7 +157,7 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 				file.name === fromName ? { ...file, name: toName } : { ...file }
 			);
 
-			await persistProjectFiles(nextFiles);
+			await persistProjectFiles(nextFiles, project);
 		}
 
 		if (event.op === 'delete') {
@@ -130,28 +167,14 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 			const nextFiles = project.files
 				.filter((file: ProjectFile) => file.name !== deleted)
 				.map((f: ProjectFile) => ({ ...f }));
-			await persistProjectFiles(nextFiles);
+			await persistProjectFiles(nextFiles, project);
 		}
 
 		await options.onRemoteOperationApplied?.();
 	}
 
 	function start() {
-		const project = options.getProject();
-		if (!project?.room || leaveRoom) return;
-
-		const client = getLiveblocksClient();
-		const entered = client.enterRoom(project.room, {
-			initialPresence: { cursor: null, selection: null }
-		});
-		leaveRoom = entered.leave;
-		roomRef = entered.room;
-
-		unsubscribeEvents = roomRef.subscribe('event', ({ event }) => {
-			if (isFsEvent(event)) {
-				void applyRemoteFsOperation(event);
-			}
-		});
+		ensureRoomForProject(options.getProject());
 	}
 
 	function stop() {
@@ -160,12 +183,14 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 		leaveRoom?.();
 		leaveRoom = undefined;
 		roomRef = undefined;
+		currentRoomId = null;
 		unsubPermissions();
 	}
 
-	async function broadcastFsOperation(event: FsEvent) {
-		const project = options.getProject();
-		if (!project?.room || !roomRef) return;
+	async function broadcastFsOperation(event: FsEvent, project?: IDEProject) {
+		const targetProject = project ?? options.getProject();
+		ensureRoomForProject(targetProject);
+		if (!targetProject?.room || !roomRef) return;
 
 		seenOperationIds.add(event.opId);
 		roomRef.broadcastEvent(event);
@@ -173,12 +198,12 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 			at: Date.now(),
 			command: `fs:${event.op} ${event.path}${event.nextPath ? ` -> ${event.nextPath}` : ''}`,
 			allowed: true,
-			roomId: project.room
+			roomId: targetProject.room
 		});
 	}
 
 	async function upsertFile(path: string, contents: string) {
-		const project = options.getProject();
+		const project = resolveProject(path);
 		const projectId = getProjectId(project);
 		if (!convexClient || !project || !projectId) return;
 
@@ -201,40 +226,48 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 
 	async function createFile(path: string, contents: string) {
 		if (!canWrite()) return;
+		const project = resolveProject(path);
+		if (!project) return;
 		await upsertFile(path, contents);
 
-		const project = options.getProject();
 		const actorId = String((project as { owner?: string } | undefined)?.owner ?? 'unknown');
-		await broadcastFsOperation({
-			type: 'fs-op',
-			opId: operationId('create-file'),
-			actorId,
-			op: 'create',
-			path,
-			contents,
-			isDirectory: false,
-			ts: Date.now()
-		});
+		await broadcastFsOperation(
+			{
+				type: 'fs-op',
+				opId: operationId('create-file'),
+				actorId,
+				op: 'create',
+				path,
+				contents,
+				isDirectory: false,
+				ts: Date.now()
+			},
+			project
+		);
 	}
 
 	async function createDirectory(path: string) {
 		if (!canWrite()) return;
-		const project = options.getProject();
+		const project = resolveProject(path);
+		if (!project) return;
 		const actorId = String((project as { owner?: string } | undefined)?.owner ?? 'unknown');
-		await broadcastFsOperation({
-			type: 'fs-op',
-			opId: operationId('create-dir'),
-			actorId,
-			op: 'create',
-			path,
-			isDirectory: true,
-			ts: Date.now()
-		});
+		await broadcastFsOperation(
+			{
+				type: 'fs-op',
+				opId: operationId('create-dir'),
+				actorId,
+				op: 'create',
+				path,
+				isDirectory: true,
+				ts: Date.now()
+			},
+			project
+		);
 	}
 
 	async function renamePath(path: string, nextPath: string) {
 		if (!canWrite()) return;
-		const project = options.getProject();
+		const project = resolveProject(path) ?? resolveProject(nextPath);
 		if (!project) return;
 
 		const fromName = resolveProjectFileName(path, project.files);
@@ -242,40 +275,46 @@ export function createProjectFilesSync(options: CreateProjectFilesSyncOptions) {
 		const nextFiles = project.files.map((file: ProjectFile) =>
 			file.name === fromName ? { ...file, name: toName } : { ...file }
 		);
-		await persistProjectFiles(nextFiles);
+		await persistProjectFiles(nextFiles, project);
 
 		const actorId = String((project as { owner?: string } | undefined)?.owner ?? 'unknown');
-		await broadcastFsOperation({
-			type: 'fs-op',
-			opId: operationId('rename'),
-			actorId,
-			op: 'rename',
-			path,
-			nextPath,
-			ts: Date.now()
-		});
+		await broadcastFsOperation(
+			{
+				type: 'fs-op',
+				opId: operationId('rename'),
+				actorId,
+				op: 'rename',
+				path,
+				nextPath,
+				ts: Date.now()
+			},
+			project
+		);
 	}
 
 	async function deletePath(path: string) {
 		if (!canWrite()) return;
-		const project = options.getProject();
+		const project = resolveProject(path);
 		if (!project) return;
 
 		const deleted = resolveProjectFileName(path, project.files);
 		const nextFiles = project.files
 			.filter((file: ProjectFile) => file.name !== deleted)
 			.map((f: ProjectFile) => ({ ...f }));
-		await persistProjectFiles(nextFiles);
+		await persistProjectFiles(nextFiles, project);
 
 		const actorId = String((project as { owner?: string } | undefined)?.owner ?? 'unknown');
-		await broadcastFsOperation({
-			type: 'fs-op',
-			opId: operationId('delete'),
-			actorId,
-			op: 'delete',
-			path,
-			ts: Date.now()
-		});
+		await broadcastFsOperation(
+			{
+				type: 'fs-op',
+				opId: operationId('delete'),
+				actorId,
+				op: 'delete',
+				path,
+				ts: Date.now()
+			},
+			project
+		);
 	}
 
 	return {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ArrowDownIcon, ArrowRightIcon, FileCodeIcon, FolderIcon } from '@lucide/svelte';
-	import type { FileTreeItem } from '$types/editor.js';
+	import FileTreeView from './FileTreeView.svelte';
+	import type { FileNode, FileTreeItem } from '$types/editor.js';
 
 	const defaultItems: FileTreeItem[] = [
 		{
@@ -27,137 +27,100 @@
 	let { items, selected = $bindable('app.css'), variant = 'default', onSelect }: Props = $props();
 
 	let files = $state<FileTreeItem[]>(structuredClone(defaultItems));
+	let treeNodes = $state<FileNode[]>([]);
+	let itemByPath = $state<Record<string, FileTreeItem>>({});
+	let expandedByPath = $state<Record<string, true>>({});
 
 	$effect(() => {
 		files = structuredClone(items ?? defaultItems);
+
+		const nextItemByPath: Record<string, FileTreeItem> = {};
+		const nextExpandedByPath: Record<string, true> = {};
+
+		function mapTree(source: FileTreeItem[], depth = 0, parentPath = ''): FileNode[] {
+			return source.map((item) => {
+				const path = parentPath ? `${parentPath}/${item.name}` : item.name;
+				nextItemByPath[path] = item;
+
+				if (item.type === 'folder') {
+					if (item.isOpen) nextExpandedByPath[path] = true;
+					const children = mapTree(item.children ?? [], depth + 1, path);
+					return {
+						name: item.name,
+						path,
+						type: 'directory',
+						depth,
+						children
+					} satisfies FileNode;
+				}
+
+				return {
+					name: item.name,
+					path,
+					type: 'file',
+					depth
+				} satisfies FileNode;
+			});
+		}
+
+		treeNodes = mapTree(files);
+		itemByPath = nextItemByPath;
+		expandedByPath = nextExpandedByPath;
 	});
 
-	function toggleFolder(folder: FileTreeItem) {
-		folder.isOpen = !folder.isOpen;
+	function toggleFolder(path: string) {
+		if (expandedByPath[path]) {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { [path]: _removed, ...rest } = expandedByPath;
+			expandedByPath = rest;
+			return;
+		}
+
+		expandedByPath = { ...expandedByPath, [path]: true };
 	}
 
-	function selectFile(item: FileTreeItem) {
+	function selectFile(path: string) {
+		const item = itemByPath[path];
+		if (!item) return;
+
 		selected = item.name;
 		onSelect?.(item.name, item);
 	}
+
+	function isExpanded(path: string) {
+		return Boolean(expandedByPath[path]);
+	}
+
+	function isFileActive(path: string) {
+		const item = itemByPath[path];
+		if (!item) return false;
+		return selected === path || selected === item.name;
+	}
 </script>
 
-<ul class="tree-root" data-variant={variant}>
-	{#each files as item}
-		<li class="tree-item">
-			{#if item.type === 'folder'}
-				<button class="item-label folder" onclick={() => toggleFolder(item)}>
-					<span class="chevron">
-						{#if item.isOpen}<ArrowDownIcon size={14} />{:else}<ArrowRightIcon size={14} />{/if}
-					</span>
-					<FolderIcon size={16} class="icon-folder" />
-					{item.name}
-				</button>
-
-				{#if item.isOpen}
-					<ul class="sub-tree">
-						{#each item.children ?? [] as child}
-							<li class="tree-item">
-								{#if child.type === 'folder'}
-									<button class="item-label folder" onclick={() => toggleFolder(child)}>
-										<span class="chevron">
-											{#if child.isOpen}<ArrowDownIcon size={14} />{:else}<ArrowRightIcon
-													size={14}
-												/>{/if}
-										</span>
-										<FolderIcon size={16} class="icon-folder" />
-										{child.name}
-									</button>
-								{:else}
-									<button
-										class="item-label file"
-										class:active={selected === child.name}
-										onclick={() => selectFile(child)}
-									>
-										<FileCodeIcon size={16} class="icon-file" />
-										{child.name}
-									</button>
-								{/if}
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			{:else}
-				<button
-					class="item-label file"
-					class:active={selected === item.name}
-					onclick={() => selectFile(item)}
-				>
-					<FileCodeIcon size={16} class="icon-file" />
-					{item.name}
-				</button>
-			{/if}
-		</li>
-	{/each}
-</ul>
+<div class="tree-root" data-variant={variant}>
+	<FileTreeView
+		nodes={treeNodes}
+		selectedPath={selected}
+		{isExpanded}
+		{isFileActive}
+		onDirClick={(node) => toggleFolder(node.path)}
+		onFileClick={(node) => selectFile(node.path)}
+	/>
+</div>
 
 <style>
 	.tree-root {
-		list-style: none;
-		padding: 0.4rem 0;
+		padding: 0.25rem 0;
 		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 		font-size: 13px;
-	}
-
-	.tree-root {
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--fg);
+		overflow: hidden;
 	}
 
 	.tree-root[data-variant='compact'] {
 		font-size: 12px;
-	}
-
-	.sub-tree {
-		list-style: none;
-		padding: 0;
-		padding-left: 1rem;
-	}
-
-	.item-label {
-		display: flex;
-		align-items: center;
-		width: 100%;
-		padding: 0.3rem 0.75rem;
-		background: transparent;
-		border: none;
-		color: var(--muted);
-		cursor: pointer;
-		text-align: left;
-		gap: 6px;
-		white-space: nowrap;
-	}
-
-	.item-label:hover {
-		background: var(--glint); /* Subtle hover token */
-		color: var(--text);
-	}
-
-	.item-label.active {
-		background: color-mix(in srgb, var(--accent) 12%, var(--mg));
-		color: color-mix(in srgb, var(--accent) 70%, var(--text));
-	}
-
-	.chevron {
-		display: flex;
-		align-items: center;
-		width: 16px;
-	}
-
-	.tree-root :global(.icon-folder) {
-		color: var(--info);
-	}
-	.tree-root :global(.icon-file) {
-		color: var(--muted);
-	}
-
-	.tree-root :global(.item-label.active .icon-file) {
-		color: var(--accent);
 	}
 </style>

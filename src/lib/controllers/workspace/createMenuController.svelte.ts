@@ -1,7 +1,7 @@
 import type { TabId } from '$lib/stores/activity/activityStore.svelte.js';
-import type { MenuAction, MenuCommand } from '../../../types/commands.js';
+import type { MenuAction, MenuCommand } from '$types/commands.js';
 
-type CreateAppMenuControllerOptions = {
+type Options = {
 	navigate: (path: string) => void;
 	setActivityTab: (tab: TabId) => void;
 	toggleLeftPane: () => void;
@@ -12,9 +12,9 @@ type CreateAppMenuControllerOptions = {
 	openReadme: () => void;
 };
 
-export function createAppMenuController(options: CreateAppMenuControllerOptions) {
+export function createMenuController(options: Options) {
 	let openMenu = $state<string | null>(null);
-	let highlightedIndex = $state(0);
+	let highlighted = $state(0);
 
 	const menuActions: Record<string, MenuAction[]> = {
 		File: [
@@ -66,12 +66,12 @@ export function createAppMenuController(options: CreateAppMenuControllerOptions)
 		}
 
 		openMenu = menu;
-		highlightedIndex = 0;
+		highlighted = 0;
 	}
 
 	function closeMenu() {
 		openMenu = null;
-		highlightedIndex = 0;
+		highlighted = 0;
 	}
 
 	function execute(item: MenuCommand) {
@@ -80,13 +80,13 @@ export function createAppMenuController(options: CreateAppMenuControllerOptions)
 	}
 
 	function onItemHover(index: number) {
-		highlightedIndex = index;
+		highlighted = index;
 	}
 
 	function onMenuHover(menu: string) {
 		if (!openMenu) return;
 		openMenu = menu;
-		highlightedIndex = 0;
+		highlighted = 0;
 	}
 
 	function mount(isInsideRoot: (target: EventTarget | null) => boolean) {
@@ -106,19 +106,19 @@ export function createAppMenuController(options: CreateAppMenuControllerOptions)
 
 			if (event.key === 'ArrowDown') {
 				event.preventDefault();
-				highlightedIndex = Math.min(highlightedIndex + 1, Math.max(activeItems.length - 1, 0));
+				highlighted = Math.min(highlighted + 1, Math.max(activeItems.length - 1, 0));
 				return;
 			}
 
 			if (event.key === 'ArrowUp') {
 				event.preventDefault();
-				highlightedIndex = Math.max(highlightedIndex - 1, 0);
+				highlighted = Math.max(highlighted - 1, 0);
 				return;
 			}
 
 			if (event.key === 'Enter') {
 				event.preventDefault();
-				const candidate = activeItems[highlightedIndex];
+				const candidate = activeItems[highlighted];
 				if (candidate) execute(candidate);
 			}
 		};
@@ -136,8 +136,8 @@ export function createAppMenuController(options: CreateAppMenuControllerOptions)
 		get openMenu() {
 			return openMenu;
 		},
-		get highlightedIndex() {
-			return highlightedIndex;
+		get highlighted() {
+			return highlighted;
 		},
 		get menuActions() {
 			return menuActions;

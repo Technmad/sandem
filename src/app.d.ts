@@ -3,10 +3,16 @@
 
 declare global {
 	namespace App {
-		// interface Error {}
+		interface Error {
+			message: string;
+			code?: 'INTERNAL_ERROR' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_REQUEST';
+			requestId?: string;
+		}
+
 		interface Locals {
 			token: string | undefined;
 		}
+
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}

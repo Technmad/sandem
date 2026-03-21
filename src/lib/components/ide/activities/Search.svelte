@@ -4,7 +4,7 @@
 	import Button from '$lib/components/ui/primitives/Button.svelte';
 	import SearchBar from '$lib/components/ui/inputs/SearchBar.svelte';
 	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
-	import { createSearchActivity } from '$lib/hooks/activity/index.js';
+	import { createSearchActivity } from '$lib/controllers/activity/index.js';
 	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
 
 	const ide = requireIDEContext();
