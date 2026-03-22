@@ -214,9 +214,35 @@ export function createExplorerActivity(deps: ExplorerActivityDeps) {
 		// Some sessions race runtime/project mount; retry until tree is populated
 		// so folders appear without requiring a manual refresh click.
 		const attempts = 80; // 24 seconds at 300ms intervals
+		let previousTreeLength = 0;
+		let stabilizedCount = 0;
+		const stabilizeThreshold = 3; // Tree must not grow for 3 consecutive checks
+
 		for (let i = 0; i < attempts; i += 1) {
 			await deps.fileTree.refresh({ silent: true });
-			if (deps.fileTree.tree.length > 0) return;
+			const currentTreeLength = deps.fileTree.tree.length;
+
+			if (currentTreeLength === 0) {
+				// Reset if tree is empty - wait for content
+				stabilizedCount = 0;
+				previousTreeLength = 0;
+				await delay(300);
+				continue;
+			}
+
+			if (currentTreeLength === previousTreeLength) {
+				// Tree size didn't change from last refresh
+				stabilizedCount++;
+				if (stabilizedCount >= stabilizeThreshold) {
+					// Tree has stabilized - exit bootstrap
+					return;
+				}
+			} else {
+				// Tree size changed - reset stabilization counter
+				stabilizedCount = 0;
+			}
+
+			previousTreeLength = currentTreeLength;
 			await delay(300);
 		}
 	}

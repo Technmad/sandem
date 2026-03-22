@@ -9,28 +9,47 @@
 		ChevronsUpDown,
 		Ellipsis
 	} from '@lucide/svelte';
+	import { onMount } from 'svelte';
 
 	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
-	import { createProjectFilesSync } from '$lib/services/explorer/index.js';
-	import {
-		createFileTree,
-		createExplorerActivity,
-		createExplorerPanelController
-	} from '$lib/controllers/explorer/index.js';
+	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
+	import { activity } from '$lib/stores/activity/activityStore.svelte.js';
 	import { projectFolderName } from '$lib/utils/project/projects.js';
 	import { findNodeByPath } from '$lib/utils/editor/fileTreeOps.js';
-	import { onMount } from 'svelte';
-	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
-	import Button from '$lib/components/ui/primitives/Button.svelte';
-	import FileTreeView from '$lib/components/ui/editor/FileTreeView.svelte';
+	import { filterNodesByQuery, getPathsToExpand } from '$lib/utils/editor/explorerTreeOps.js';
+	import type { FileNode } from '$types/editor';
+	import type { IDEProject } from '$types/projects';
+
+	import { createFileTree } from '$lib/controllers/explorer/index.js';
+	import { createProjectFilesSync } from '$lib/services/explorer/index.js';
+	import { createExplorerStateController } from '$lib/controllers/explorer/createExplorerStateController.svelte.js';
+	import {
+		handleCreateFile,
+		handleCreateFolder,
+		handleRenameNode,
+		handleDeleteNode,
+		handleRefreshTree,
+		handleExpandAll,
+		handleCollapseAll,
+		handleRefreshAndExpandAll,
+		type ExplorerActionContext
+	} from '$lib/controllers/explorer/createExplorerActionHandlers.svelte.js';
+
+	import ExplorerContent from './ExplorerContent.svelte';
 	import ActivityPanel from './ActivityPanel.svelte';
-	import { Accordion } from 'bits-ui';
+
+	// ─────────────────────────────────────────────────────────
+	// Injection: IDE context, stores, and dependencies
+	// ─────────────────────────────────────────────────────────
 
 	const ide = requireIDEContext();
+	const explorerState = createExplorerStateController();
+
 	const fileTree = createFileTree(ide.getWebcontainer, {
 		getWorkspaceRootFolders: () =>
-			(ide.getWorkspaceProjects?.() ?? []).map((project) => projectFolderName(project.id))
+			(ide.getWorkspaceProjects?.() ?? []).map((p) => projectFolderName(p.id))
 	});
+
 	const projectSync = createProjectFilesSync({
 		getProject: () => ide.getProject(editorStore.activeTabPath ?? undefined),
 		getProjectForPath: (path: string) => ide.getProject(path),
@@ -39,407 +58,389 @@
 			await fileTree.refresh({ silent: true });
 		}
 	});
-	const explorer = createExplorerActivity({
-		getWebcontainer: ide.getWebcontainer,
-		getEntryPath: ide.getEntryPath,
-		getActiveTabPath: () => editorStore.activeTabPath,
-		openFile: editorStore.openFile,
-		fileTree,
-		projectSync
-	});
 
-	const explorerPanel = createExplorerPanelController({
-		getWorkspaceProjects: () => ide.getWorkspaceProjects?.() ?? [],
-		projectFolderName,
-		selectProject: ide.selectProject,
-		onProjectSelected: () => {
-			projectSync.start();
-		},
-		createProject: ide.createProject,
-		renameProject: ide.commitRenameProject,
-		deleteProject: ide.confirmDeleteProject,
-		handleFileClick: explorer.handleFileClick,
-		handleDirClick: explorer.handleDirClick,
-		createFolder: explorer.createFolder,
-		renamePath: explorer.renamePath,
-		deletePath: explorer.deletePath,
-		prompt: (message: string, defaultValue?: string) => window.prompt(message, defaultValue),
-		confirm: (message: string) => window.confirm(message)
-	});
+	// ─────────────────────────────────────────────────────────
+	// Derived state: filtered and decorated tree
+	// ─────────────────────────────────────────────────────────
 
 	const tree = $derived(fileTree.tree);
 	const treeLoading = $derived(fileTree.loading);
 	const treeError = $derived(fileTree.error);
-	const selectedTreePath = $derived(explorerPanel.selectedTreePath);
-	const actionMessage = $derived(explorer.actionMessage);
-	const actionError = $derived(explorer.actionError);
-	let openSections = $state<string[]>(['files']);
 
-	const panelActions = [
-		{
-			key: 'new-file',
-			title: 'New file',
-			ariaLabel: 'New file',
-			onClick: () => void explorer.createFile(),
-			icon: FilePlus
-		},
-		{
-			key: 'new-folder',
-			title: 'New folder',
-			ariaLabel: 'New folder',
-			onClick: () => void explorerPanel.createFolderAction(),
-			icon: FolderPlus
-		},
-		{
-			key: 'rename-path',
-			title: 'Rename path',
-			ariaLabel: 'Rename path',
-			onClick: () => void explorerPanel.renameAction(),
-			icon: FilePenLine
-		},
-		{
-			key: 'delete-path',
-			title: 'Delete path',
-			ariaLabel: 'Delete path',
-			onClick: () => void explorerPanel.deleteAction(),
-			icon: Trash2
-		},
-		{
-			key: 'refresh-explorer',
-			title: 'Refresh explorer',
-			ariaLabel: 'Refresh explorer',
-			onClick: () => void explorer.refreshTree(),
-			icon: RefreshCw
-		},
-		{
-			key: 'toggle-all-folders',
-			title: 'Expand/Collapse all folders',
-			ariaLabel: 'Expand or collapse all folders',
-			onClick: explorer.toggleAllFolders,
-			icon: ChevronsUpDown
-		},
-		{
-			key: 'refresh-and-expand',
-			title: 'Refresh and expand all',
-			ariaLabel: 'More actions',
-			onClick: () => void explorer.refreshAndExpandAll(),
-			icon: Ellipsis
+	// Filter tree by search query
+	const filteredTree = $derived(filterNodesByQuery(tree, explorerState.searchQuery));
+
+	// Get paths to expand when searching
+	const expandOnSearch = $derived(getPathsToExpand(filteredTree, explorerState.searchQuery));
+
+	const workspaceProjects = $derived(ide.getWorkspaceProjects?.() ?? []);
+	const activeProject = $derived(
+		workspaceProjects.find((p) => p.id === ide.getActiveProjectId?.())
+	);
+
+	type ExplorerTimelineEvent = {
+		id: string;
+		at: number;
+		kind: 'action' | 'error' | 'file-open' | 'folder-toggle';
+		label: string;
+		path?: string;
+	};
+
+	let timelineEvents = $state<ExplorerTimelineEvent[]>([]);
+	let contextMenu = $state({ open: false, x: 0, y: 0, path: null as string | null });
+
+	function closeContextMenu() {
+		contextMenu = { ...contextMenu, open: false };
+	}
+
+	function handleContextMenuAction(
+		action: 'new-file' | 'new-folder' | 'rename' | 'delete' | 'refresh'
+	) {
+		closeContextMenu();
+		if (action === 'new-file') return void handleCreateFile(getActionContext());
+		if (action === 'new-folder') return void handleCreateFolder(getActionContext());
+		if (action === 'rename') return void handleRenameNode(getActionContext());
+		if (action === 'delete') return void handleDeleteNode(getActionContext());
+		return void handleRefreshTree(getActionContext());
+	}
+
+	function addTimelineEvent(kind: ExplorerTimelineEvent['kind'], label: string, path?: string) {
+		timelineEvents = [
+			{
+				id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+				at: Date.now(),
+				kind,
+				label,
+				path
+			},
+			...timelineEvents
+		].slice(0, 40);
+	}
+
+	// ─────────────────────────────────────────────────────────
+	// Action handlers (pure, can be imported/tested)
+	// ─────────────────────────────────────────────────────────
+
+	let actionMessage = $state('');
+	let actionError = $state('');
+
+	function clearActionState() {
+		actionMessage = '';
+		actionError = '';
+	}
+
+	function setActionMessage(msg: string) {
+		clearActionState();
+		actionMessage = msg;
+		addTimelineEvent('action', msg);
+		setTimeout(() => {
+			if (actionMessage === msg) {
+				actionMessage = '';
+			}
+		}, 3000);
+	}
+
+	function setActionError(msg: string) {
+		clearActionState();
+		actionError = msg;
+		addTimelineEvent('error', msg);
+		setTimeout(() => {
+			if (actionError === msg) {
+				actionError = '';
+			}
+		}, 5000);
+	}
+
+	// Create the action context for pure handlers
+	function getActionContext(): ExplorerActionContext {
+		return {
+			fileTree,
+			projectSync,
+			editorOpenFile: editorStore.openFile,
+			getWebcontainer: ide.getWebcontainer,
+			getActiveProject: () => activeProject as IDEProject | undefined,
+			tree,
+			selectedPath: explorerState.selectedPath,
+			onMessage: setActionMessage,
+			onError: setActionError
+		};
+	}
+
+	function handleFileClick(node: FileNode) {
+		const clickType = explorerState.handleClick(node.path);
+		explorerState.selectNode(node.path);
+		addTimelineEvent('file-open', `Opened ${node.name}`, node.path);
+
+		if (clickType === 'double' || node.type === 'file') {
+			editorStore.openFile(node.path);
 		}
-	] as const;
+	}
 
+	function handleDirClick(node: FileNode) {
+		explorerState.selectNode(node.path);
+
+		if (node.depth === 0) {
+			const rootFolder = node.path.split('/')[0] ?? '';
+			const project = workspaceProjects.find((p) => projectFolderName(p.id) === rootFolder);
+			if (project) {
+				ide.selectProject?.(project.id);
+			}
+		}
+
+		fileTree.toggleDir(node.path);
+		addTimelineEvent(
+			'folder-toggle',
+			`${fileTree.isExpanded(node.path) ? 'Expanded' : 'Collapsed'} ${node.name}`,
+			node.path
+		);
+	}
+
+	function handleNodeContextMenu(node: FileNode, event: MouseEvent) {
+		event.preventDefault();
+		explorerState.selectNode(node.path);
+		contextMenu = {
+			open: true,
+			x: event.clientX,
+			y: event.clientY,
+			path: node.path
+		};
+	}
+
+	// ─────────────────────────────────────────────────────────
+	// Lifecycle
+	// ─────────────────────────────────────────────────────────
 	onMount(() => {
-		explorer.start();
+		const onWindowKeydown = (event: KeyboardEvent) => {
+			if (activity.tab !== 'explorer') return;
+
+			const target = event.target as HTMLElement | null;
+			if (
+				target instanceof HTMLInputElement ||
+				target instanceof HTMLTextAreaElement ||
+				target instanceof HTMLSelectElement ||
+				target?.isContentEditable
+			) {
+				return;
+			}
+
+			const ctx = getActionContext();
+			const cmdOrCtrl = event.metaKey || event.ctrlKey;
+
+			if (cmdOrCtrl && !event.shiftKey && event.key.toLowerCase() === 'n') {
+				event.preventDefault();
+				void handleCreateFile(ctx);
+				return;
+			}
+
+			if (cmdOrCtrl && event.shiftKey && event.key.toLowerCase() === 'n') {
+				event.preventDefault();
+				void handleCreateFolder(ctx);
+				return;
+			}
+
+			if (event.key === 'F2') {
+				event.preventDefault();
+				void handleRenameNode(ctx);
+				return;
+			}
+
+			if (event.key === 'Delete') {
+				event.preventDefault();
+				void handleDeleteNode(ctx);
+				return;
+			}
+
+			if (event.key === 'Escape') {
+				closeContextMenu();
+			}
+		};
+
+		const onWindowPointerDown = () => {
+			if (contextMenu.open) {
+				closeContextMenu();
+			}
+		};
+
+		window.addEventListener('keydown', onWindowKeydown);
+		window.addEventListener('pointerdown', onWindowPointerDown);
+
+		projectSync.start();
+		fileTree.startAutoRefresh(850);
+
+		// Start async refresh
+		fileTree.refresh({ silent: true }).then(() => {
+			// Bootstrap tree sync with retry
+			const attempts = 80;
+			let previousLength = 0;
+			let stabilizedCount = 0;
+
+			const runBootstrap = async () => {
+				for (let i = 0; i < attempts; i++) {
+					await fileTree.refresh({ silent: true });
+					const current = fileTree.tree.length;
+
+					if (current === 0) {
+						stabilizedCount = 0;
+					} else if (current === previousLength) {
+						stabilizedCount++;
+						if (stabilizedCount >= 3) break;
+					} else {
+						stabilizedCount = 0;
+					}
+
+					previousLength = current;
+					await new Promise((r) => setTimeout(r, 300));
+				}
+			};
+
+			runBootstrap().catch(() => {
+				// Bootstrap failed, continue anyway
+			});
+		});
 
 		return () => {
-			explorer.stop();
+			window.removeEventListener('keydown', onWindowKeydown);
+			window.removeEventListener('pointerdown', onWindowPointerDown);
+			fileTree.stopAutoRefresh();
+			projectSync.stop();
+			explorerState.reset();
 		};
 	});
 
+	// Auto-open entry file
 	$effect(() => {
-		const projectCount = (ide.getWorkspaceProjects?.() ?? []).length;
-		if (projectCount <= 0) return;
-		if (tree.length > 0) return;
-		void fileTree.refresh();
-	});
+		if (tree.length === 0 || treeLoading) return;
+		if (editorStore.tabs.length > 0) return;
 
-	$effect(() => {
-		if (tree.length === 0) return;
-		if (treeLoading) return;
 		const entryPath = ide.getEntryPath();
-		if (!entryPath) return;
-		const entryNode = findNodeByPath(tree, entryPath);
-		if (entryNode && entryNode.type === 'file') {
-			explorerPanel.handleFileRowClick(entryNode);
+		if (entryPath) {
+			const node = findNodeByPath(tree, entryPath);
+			if (node?.type === 'file') {
+				editorStore.openFile(entryPath);
+			}
 		}
 	});
+
+	// Monitor search query and expand relevant paths
+	$effect(() => {
+		if (!explorerState.hasSearch) return;
+
+		for (const path of expandOnSearch) {
+			if (!fileTree.isExpanded(path)) {
+				fileTree.toggleDir(path);
+			}
+		}
+	});
+
+	let openSections = $state<string[]>(['files']);
+
+	// ─────────────────────────────────────────────────────────
+	// Action buttons configuration
+	// ─────────────────────────────────────────────────────────
+
+	import type { Component } from 'svelte';
+
+	interface ActionButton {
+		id: string;
+		title?: string;
+		icon?: Component;
+		handler?: () => void | Promise<void>;
+		disabled?: boolean | (() => boolean);
+		isSpacer?: boolean;
+	}
+
+	const actionButtons: ActionButton[] = [
+		{
+			id: 'new-file',
+			title: 'New File',
+			icon: FilePlus,
+			handler: () => handleCreateFile(getActionContext()),
+			disabled: false
+		},
+		{
+			id: 'new-folder',
+			title: 'New Folder',
+			icon: FolderPlus,
+			handler: () => handleCreateFolder(getActionContext()),
+			disabled: false
+		},
+		{
+			id: 'rename',
+			title: 'Rename path',
+			icon: FilePenLine,
+			handler: () => handleRenameNode(getActionContext()),
+			disabled: () => !explorerState.selectedPath
+		},
+		{
+			id: 'delete',
+			title: 'Delete path',
+			icon: Trash2,
+			handler: () => handleDeleteNode(getActionContext()),
+			disabled: () => !explorerState.selectedPath
+		},
+		{
+			id: 'spacer',
+			isSpacer: true
+		},
+		{
+			id: 'expand-all',
+			title: 'Expand All',
+			icon: ChevronRight,
+			handler: () => handleExpandAll(getActionContext()),
+			disabled: false
+		},
+		{
+			id: 'collapse-all',
+			title: 'Collapse All',
+			icon: ChevronsUpDown,
+			handler: () => handleCollapseAll(getActionContext()),
+			disabled: false
+		},
+		{
+			id: 'refresh',
+			title: 'Refresh',
+			icon: RefreshCw,
+			handler: () => handleRefreshTree(getActionContext()),
+			disabled: false
+		},
+		{
+			id: 'more-actions',
+			title: 'More Actions',
+			icon: Ellipsis,
+			handler: () => handleRefreshAndExpandAll(getActionContext()),
+			disabled: false
+		}
+	];
 </script>
 
-<ActivityPanel title="EXPLORER">
-	{#snippet actions()}
-		{#each panelActions as action (action.key)}
-			<Button
-				variant="ghost"
-				tone="neutral"
-				size="icon"
-				class="panel-icon-action"
-				title={action.title}
-				aria-label={action.ariaLabel}
-				onclick={action.onClick}
-			>
-				{@const Icon = action.icon}
-				<Icon size={12} strokeWidth={1.75} />
-			</Button>
-		{/each}
-	{/snippet}
-
-	<Accordion.Root type="multiple" bind:value={openSections} class="explorer-accordion">
-		{#if actionError}
-			<div class="status-msg error">{actionError}</div>
-		{:else if actionMessage}
-			<div class="status-msg">{actionMessage}</div>
-		{/if}
-
-		{#if editorStore.tabs.length > 0}
-			<Accordion.Item value="open-editors" class="explorer-section">
-				<Accordion.Header>
-					<Accordion.Trigger class="section-trigger">
-						<span class="section-chevron" aria-hidden="true">
-							<ChevronRight size={11} strokeWidth={2} />
-						</span>
-						<span class="section-title">OPEN EDITORS</span>
-					</Accordion.Trigger>
-				</Accordion.Header>
-				<Accordion.Content>
-					{#each editorStore.tabs as tab (tab.path)}
-						{@const activeTab = editorStore.isActive(tab.path)}
-						<Button
-							variant={activeTab ? 'default' : 'ghost'}
-							tone={activeTab ? 'accent' : 'neutral'}
-							size="sm"
-							justify="start"
-							class="open-editor-btn"
-							onclick={() => editorStore.openFile(tab.path)}
-						>
-							<span class="open-editor-dot" class:active={activeTab}></span>
-							<span>{tab.label}</span>
-						</Button>
-					{/each}
-				</Accordion.Content>
-			</Accordion.Item>
-		{/if}
-
-		<Accordion.Item value="files" class="explorer-section">
-			<Accordion.Header>
-				<Accordion.Trigger class="section-trigger">
-					<span class="section-chevron" aria-hidden="true">
-						<ChevronRight size={11} strokeWidth={2} />
-					</span>
-					<span class="section-title">FOLDERS</span>
-				</Accordion.Trigger>
-			</Accordion.Header>
-
-			<Accordion.Content>
-				{#if tree.length > 0}
-					<FileTreeView
-						nodes={tree}
-						selectedPath={selectedTreePath}
-						isExpanded={fileTree.isExpanded}
-						isFileActive={(path) => editorStore.isActive(path)}
-						onDirClick={explorerPanel.handleDirRowClick}
-						onFileClick={explorerPanel.handleFileRowClick}
-					/>
-				{:else if treeLoading}
-					<div class="status-msg">Loading…</div>
-				{:else if treeError}
-					<div class="status-msg">{treeError}</div>
-				{:else}
-					<div class="status-msg">No files found.</div>
-				{/if}
-			</Accordion.Content>
-		</Accordion.Item>
-
-		<Accordion.Item value="outline" class="explorer-section">
-			<Accordion.Header>
-				<Accordion.Trigger class="section-trigger">
-					<span class="section-chevron" aria-hidden="true">
-						<ChevronRight size={11} strokeWidth={2} />
-					</span>
-					<span class="section-title">OUTLINE</span>
-				</Accordion.Trigger>
-			</Accordion.Header>
-
-			<Accordion.Content>
-				<div class="section-placeholder">No symbols found in the active editor.</div>
-			</Accordion.Content>
-		</Accordion.Item>
-
-		<Accordion.Item value="timeline" class="explorer-section">
-			<Accordion.Header>
-				<Accordion.Trigger class="section-trigger">
-					<span class="section-chevron" aria-hidden="true">
-						<ChevronRight size={11} strokeWidth={2} />
-					</span>
-					<span class="section-title">TIMELINE</span>
-				</Accordion.Trigger>
-			</Accordion.Header>
-
-			<Accordion.Content>
-				<div class="section-placeholder">No timeline provider available for this resource.</div>
-			</Accordion.Content>
-		</Accordion.Item>
-
-		<Accordion.Item value="npm-scripts" class="explorer-section">
-			<Accordion.Header>
-				<Accordion.Trigger class="section-trigger">
-					<span class="section-chevron" aria-hidden="true">
-						<ChevronRight size={11} strokeWidth={2} />
-					</span>
-					<span class="section-title">NPM SCRIPTS</span>
-				</Accordion.Trigger>
-			</Accordion.Header>
-			<Accordion.Content>
-				<div class="section-placeholder">No scripts are currently detected.</div>
-			</Accordion.Content>
-		</Accordion.Item>
-
-		<Accordion.Item value="testing" class="explorer-section">
-			<Accordion.Header>
-				<Accordion.Trigger class="section-trigger">
-					<span class="section-chevron" aria-hidden="true">
-						<ChevronRight size={11} strokeWidth={2} />
-					</span>
-					<span class="section-title">TESTING</span>
-				</Accordion.Trigger>
-			</Accordion.Header>
-			<Accordion.Content>
-				<div class="section-placeholder">No test tasks have been configured yet.</div>
-			</Accordion.Content>
-		</Accordion.Item>
-
-		<Accordion.Item value="ports" class="explorer-section">
-			<Accordion.Header>
-				<Accordion.Trigger class="section-trigger">
-					<span class="section-chevron" aria-hidden="true">
-						<ChevronRight size={11} strokeWidth={2} />
-					</span>
-					<span class="section-title">PORTS</span>
-				</Accordion.Trigger>
-			</Accordion.Header>
-			<Accordion.Content>
-				<div class="section-placeholder">No forwarded ports are currently active.</div>
-			</Accordion.Content>
-		</Accordion.Item>
-	</Accordion.Root>
+<ActivityPanel title="EXPLORER" {actionButtons}>
+	<ExplorerContent
+		bind:openSections
+		{tree}
+		{filteredTree}
+		{treeLoading}
+		{treeError}
+		activeProject={(activeProject as IDEProject | undefined) ?? null}
+		{actionMessage}
+		{actionError}
+		selectedPath={explorerState.selectedPath}
+		searchQuery={explorerState.searchQuery}
+		hasSearch={explorerState.hasSearch}
+		{expandOnSearch}
+		activeFilePath={editorStore.activeTabPath}
+		{timelineEvents}
+		isExpanded={(path: string) => fileTree.isExpanded(path)}
+		onDirClick={handleDirClick}
+		onFileClick={handleFileClick}
+		onNodeContextMenu={handleNodeContextMenu}
+		{contextMenu}
+		onContextMenuAction={handleContextMenuAction}
+		onCloseContextMenu={closeContextMenu}
+		onTimelineOpenPath={(path: string) => editorStore.openFile(path)}
+		onSearchChange={(query: string) => explorerState.setSearchQuery(query)}
+		onSearchClear={() => explorerState.clearSearch()}
+	/>
 </ActivityPanel>
 
 <style>
-	/* ── Accordion sections (VS Code-like) ───────────────────── */
-	:global(.explorer-accordion) {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		min-height: 0;
-		overflow: hidden;
-	}
-
-	:global(.explorer-section) {
-		display: flex;
-		flex: 0 0 auto;
-		flex-direction: column;
-		border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
-	}
-
-	:global(.explorer-section[data-state='open']) {
-		flex: 1 1 0;
-		min-height: 104px;
-	}
-
-	:global(.explorer-section:last-child) {
-		border-bottom: 0;
-	}
-
-	:global(.section-trigger) {
-		display: flex;
-		align-items: center;
-		gap: 3px;
-		width: 100%;
-		height: 28px;
-		padding: 0 10px;
-		border: 0;
-		background: var(--mg);
-		cursor: pointer;
-		text-align: left;
-	}
-
-	:global(.section-trigger:hover) {
-		background: color-mix(in srgb, var(--fg) 50%, transparent);
-	}
-
-	.section-title {
-		font-size: 10px;
-		font-weight: 700;
-		letter-spacing: 0.1em;
-		color: var(--muted);
-		text-transform: uppercase;
-		line-height: 1;
-	}
-
-	.section-chevron {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 12px;
-		height: 12px;
-		color: var(--muted);
-		transition: transform var(--time) var(--ease);
-	}
-
-	:global(.explorer-section[data-state='open'] .section-chevron) {
-		transform: rotate(90deg);
-	}
-
-	:global(.explorer-section [data-accordion-content]) {
-		flex: 1;
-		min-height: 0;
-		overflow: hidden;
-	}
-
-	:global(.explorer-section[data-state='open'] [data-accordion-content]) {
-		overflow: auto;
-	}
-
-	.section-placeholder {
-		padding: 6px 12px 8px;
-		font-size: 11px;
-		line-height: 1.4;
-		color: var(--muted);
-		font-style: italic;
-	}
-
-	/* ── Open editors list ──────────────────────────────────── */
-	:global([data-button-root].open-editor-btn) {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		width: 100%;
-		height: 22px;
-		padding: 0 12px;
-		font-size: 11px;
-		font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
-		border-radius: 0;
-	}
-
-	:global([data-button-root][data-size='sm'][data-variant='ghost'].open-editor-btn),
-	:global([data-button-root][data-size='sm'][data-variant='default'].open-editor-btn) {
-		padding: 0 12px;
-	}
-
-	.open-editor-dot {
-		width: 6px;
-		height: 6px;
-		border-radius: 999px;
-		background: transparent;
-		border: 1px solid var(--border);
-		flex-shrink: 0;
-		transition:
-			background var(--time) var(--ease),
-			border-color var(--time) var(--ease);
-	}
-
-	.open-editor-dot.active {
-		background: var(--accent);
-		border-color: var(--accent);
-	}
-
-	/* ── Status / empty messages ────────────────────────────── */
-	.status-msg {
-		padding: 6px 12px;
-		font-size: 11px;
-		color: var(--muted);
-		font-style: italic;
-	}
-
-	.status-msg.error {
-		color: var(--error);
-	}
 </style>

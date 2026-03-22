@@ -10,6 +10,7 @@
 		isFileActive: (path: string) => boolean;
 		onDirClick: (node: FileNode) => void;
 		onFileClick: (node: FileNode) => void;
+		onNodeContextMenu?: (node: FileNode, event: MouseEvent) => void;
 	};
 
 	let {
@@ -18,7 +19,8 @@
 		isExpanded,
 		isFileActive,
 		onDirClick,
-		onFileClick
+		onFileClick,
+		onNodeContextMenu
 	}: Props = $props();
 </script>
 
@@ -41,6 +43,7 @@
 			class={`tree-row ${node.depth === 0 ? 'root' : ''} ${open ? 'open' : ''} ${selected ? 'active' : ''}`}
 			style={`--depth: ${node.depth};`}
 			onclick={() => onDirClick(node)}
+			oncontextmenu={(event: MouseEvent) => onNodeContextMenu?.(node, event)}
 			role="treeitem"
 			aria-expanded={open}
 		>
@@ -78,6 +81,7 @@
 			class={`tree-row ${active || selected ? 'active' : ''}`}
 			style={`--depth: ${node.depth};`}
 			onclick={() => onFileClick(node)}
+			oncontextmenu={(event: MouseEvent) => onNodeContextMenu?.(node, event)}
 			role="treeitem"
 			aria-current={active || selected ? 'true' : undefined}
 		>

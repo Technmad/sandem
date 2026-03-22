@@ -19,7 +19,6 @@
 	import SearchBar from '$lib/components/ui/inputs/SearchBar.svelte';
 	import Tabs from '$lib/components/ui/primitives/Tabs.svelte';
 
-
 	let search = $state('');
 	let selectedTab = $state('overview');
 	let dropdownOpen = $state(false);
@@ -30,7 +29,6 @@
 		{ id: 'components', label: 'Components', active: selectedTab === 'components' },
 		{ id: 'ide', label: 'IDE Demo', active: selectedTab === 'ide' }
 	]);
-
 </script>
 
 <div class="shop-showcase">

@@ -28,9 +28,10 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
+		min-width: 0;
 		height: 100%;
 		overflow: hidden;
-		background: var(--mg);
-		border-right: 1px solid var(--border);
+		background: color-mix(in srgb, var(--mg) 92%, var(--bg));
+		border-right: 1px solid color-mix(in srgb, var(--border) 64%, transparent);
 	}
 </style>

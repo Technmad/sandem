@@ -30,14 +30,15 @@ After completing the code, ask the user if they want a playground link. Only cal
 
 1. **Svelte 5 First**: Always prefer Runes ($state, $props, $derived) over Svelte 4 store/export syntax.
 2. **Event Attributes**: Use `onclick`, `oninput`, etc., instead of `on:click` or `on:input`.
-3. **Data Injection**: Pass configuration data (like nav links) from layouts to components using props to keep components pure and reusable.
-4. **`/repo` Auth Gating**: Demo mode is guest-only. If authenticated, always run repo workspace flow; do not gate by project count.
-5. **Starter Seed on First Visit**: For authenticated owners with zero projects, rely on `ensureStarterProjectForOwner` to create starter content.
-6. **Keep this file current**: Whenever `AGENTS.md` is read during work, update it as needed so it accurately reflects the app’s current behavior, architecture, scripts, and known status.
-7. **Explorer Multi-root Contract**: In authenticated `/repo`, the WebContainer root is a multi-project workspace (`project-*` folders from Convex). Explorer tree should treat those folders as the canonical top-level roots.
-8. **Explorer Sync Status**: Treat Convex ↔ Explorer sync as foundational/in-progress unless explicitly wired in the active `/repo` shell. Avoid documenting it as fully shipped if delete/rename root actions are still scaffolded.
-9. **Explorer Startup Sync**: Explorer must not require manual refresh to reveal project root folders; keep silent polling + bootstrap retries active so post-boot mount races self-heal.
-10. **Project Selection Sync**: Selecting a root project folder should re-target sync context immediately (room/subscription and tree refresh behavior should follow selected project).
+3. **Data Injection + Pure Functions**: Use explicit dependency injection pattern where components receive props (not state) and action handlers are pure functions taking context. See `createExplorerActionHandlers.svelte.ts` for pattern.
+4. **Data Injection**: Pass configuration data (like nav links) from layouts to components using props to keep components pure and reusable.
+5. **`/repo` Auth Gating**: Demo mode is guest-only. If authenticated, always run repo workspace flow; do not gate by project count.
+6. **Starter Seed on First Visit**: For authenticated owners with zero projects, rely on `ensureStarterProjectForOwner` to create starter content.
+7. **Keep this file current**: Whenever `AGENTS.md` is read during work, update it as needed so it accurately reflects the app’s current behavior, architecture, scripts, and known status.
+8. **Explorer Multi-root Contract**: In authenticated `/repo`, the WebContainer root is a multi-project workspace (`project-*` folders from Convex). Explorer tree should treat those folders as the canonical top-level roots.
+9. **Explorer Sync Status**: Treat Convex ↔ Explorer sync as foundational/in-progress unless explicitly wired in the active `/repo` shell. Avoid documenting it as fully shipped if delete/rename root actions are still scaffolded.
+10. **Explorer Startup Sync**: Explorer must not require manual refresh to reveal project root folders; keep silent polling + bootstrap retries active so post-boot mount races self-heal.
+11. **Project Selection Sync**: Selecting a root project folder should re-target sync context immediately (room/subscription and tree refresh behavior should follow selected project).
 
 ## Styling Architecture (The "Svelte.dev" Way)
 
@@ -50,6 +51,27 @@ After completing the code, ask the user if they want a playground link. Only cal
 
 - **svelte-autofixer**: Run this on EVERY code generation to ensure Svelte 5 compatibility.
 - **list-sections**: Use at the start of any new technical implementation to verify the latest API changes in the Svelte 5 docs.
+
+## Explorer Architecture (Data Injection + Pure Functions)
+
+**Pattern Overview**: Three-layer architecture with explicit data flow:
+
+1. **Action Handlers** (`createExplorerActionHandlers.svelte.ts`): Pure async/sync functions taking `ExplorerActionContext` parameter. All dependencies passed as context parameters (fileTree, projectSync, editorOpenFile, getWebcontainer, getActiveProject, tree, selectedPath, onMessage, onError).
+2. **Orchestrator** (Explorer.svelte): Manages state (explorerState, fileTree, projectSync), creates ExplorerActionContext, and passes everything as props to children. Event handlers call action functions with context.
+3. **Presentation** (ExplorerContent + sub-components): Pure presentational components receiving all state/callbacks via props. No internal state management or side effects.
+
+**Key Files**:
+
+- `src/lib/controllers/explorer/createExplorerActionHandlers.svelte.ts` - Pure action handlers (8 functions for file operations)
+- `src/lib/components/ide/activities/Explorer.svelte` - Orchestrator component managing state & context
+- `src/lib/components/ide/activities/ExplorerContent.svelte` - Orchestrator for sub-components (status, open editors, files, project info, outline, timeline)
+- `src/lib/components/ide/activities/ExplorerFilesSection.svelte` - Presentation component for file tree with search
+- `src/lib/components/ide/activities/ExplorerOpenEditors.svelte` - Presentation component for open tabs
+- `src/lib/components/ide/activities/ExplorerProjectInfo.svelte` - Presentation component for project details
+- `src/lib/components/ide/activities/ExplorerOutline.svelte` - Active-model symbol outline with line-jump navigation (heuristic parsing)
+- `src/lib/components/ide/activities/ExplorerTimeline.svelte` - Local explorer activity timeline (actions/errors/open/toggle) with file reopen shortcuts
+
+**Benefits**: All dependencies are explicit in context object, making data flow transparent. Pure functions are testable without mocking. Presentation components are reusable with any data source.
 
 ---
 

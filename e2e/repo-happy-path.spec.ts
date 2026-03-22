@@ -28,20 +28,31 @@ async function signInIfNeeded(page: import('@playwright/test').Page) {
 	}
 
 	await page.goto('/test/client-only');
-	await expect(page.locator('[data-testid="is-loading"]')).toContainText('false', {
+	await expect(page.locator('[data-testid="is-loading"]')).toHaveText(/false$/, {
 		timeout: 15000
 	});
 
 	const signInForm = page.locator('[data-testid="sign-in-form"]');
 	const authenticatedCard = page.locator('[data-testid="authenticated-state"]');
-	if (await signInForm.isVisible().catch(() => false)) {
+
+	// Strict: either sign-in form is visible, or we're already authenticated
+	const isSignInVisible = await signInForm.isVisible({ timeout: 5000 }).catch(() => false);
+	const isAuthenticated = await authenticatedCard.isVisible({ timeout: 5000 }).catch(() => false);
+
+	if (!isSignInVisible && !isAuthenticated) {
+		throw new Error('Neither sign-in form nor authenticated state visible');
+	}
+
+	if (isSignInVisible) {
 		await page.fill('[data-testid="email-input"]', email);
 		await page.fill('[data-testid="password-input"]', password);
 		await page.click('[data-testid="sign-in-button"]');
 	}
 
 	await expect(authenticatedCard).toBeVisible({ timeout: 15000 });
-	await expect(page.locator('[data-testid="is-authenticated"]')).toContainText('true');
+	await expect(page.locator('[data-testid="is-authenticated"]')).toHaveText(/true$/, {
+		timeout: 10000
+	});
 }
 
 async function openRepoProject(page: import('@playwright/test').Page, projectTitle?: string) {
@@ -151,9 +162,7 @@ async function typeAtEditorEnd(page: import('@playwright/test').Page, text: stri
 		await page.keyboard.type(`\n${text}\n`, { delay: 10 });
 	}
 
-	await expect
-		.poll(async () => getAllMonacoContent(page), { timeout: 15000 })
-		.toContain(text);
+	await expect.poll(async () => getAllMonacoContent(page), { timeout: 15000 }).toContain(text);
 }
 
 async function getAllMonacoContent(page: import('@playwright/test').Page) {
@@ -181,13 +190,15 @@ test.describe('Repo happy path', () => {
 		const { email, password } = requireTestCredentials();
 
 		await page.goto('/test/client-only');
-		await expect(page.locator('[data-testid="is-loading"]')).toContainText('false', {
+		await expect(page.locator('[data-testid="is-loading"]')).toHaveText(/false$/, {
 			timeout: 15000
 		});
 
 		const signInForm = page.locator('[data-testid="sign-in-form"]');
 		const authenticatedCard = page.locator('[data-testid="authenticated-state"]');
-		if (await signInForm.isVisible().catch(() => false)) {
+		const isSignInVisible = await signInForm.isVisible({ timeout: 3000 }).catch(() => false);
+
+		if (isSignInVisible) {
 			await page.fill('[data-testid="email-input"]', email);
 			await page.fill('[data-testid="password-input"]', password);
 			await page.click('[data-testid="sign-in-button"]');
@@ -196,28 +207,45 @@ test.describe('Repo happy path', () => {
 		await expect(authenticatedCard).toBeVisible({
 			timeout: 15000
 		});
-		await expect(page.locator('[data-testid="is-authenticated"]')).toContainText('true');
+		await expect(page.locator('[data-testid="is-authenticated"]')).toHaveText(/true$/, {
+			timeout: 10000
+		});
 
 		await page.goto('/repo');
 		const editorReady = await waitForMonacoWithRecovery(page, 20000);
-		expect(editorReady, 'Monaco editor should load after sign-in').toBe(true);
+		if (!editorReady) throw new Error('Monaco editor failed to load after sign-in');
 
-		const marker = `// e2e-persist-${Date.now()}`;
+		const persistedFilePath = `src/e2e-persist-${Date.now()}.ts`;
+		const persistedBaseName = persistedFilePath.split('/').at(-1) ?? persistedFilePath;
+		page.once('dialog', async (dialog) => {
+			await dialog.accept(persistedFilePath);
+		});
+		await clickExplorerAction(page, 'New file');
+
+		await clickExplorerAction(page, 'More actions');
+		const persistedFileNode = page.getByText(persistedBaseName).first();
+		await expect(persistedFileNode).toBeVisible({ timeout: 30000 });
+		await persistedFileNode.click();
+
+		const marker = `// e2e-persist-marker-${Date.now()}`;
 		await typeAtEditorEnd(page, marker);
 
-		await expect(page.locator('[data-testid="editor-save-status"]')).toContainText('Saved', {
+		await expect(page.locator('[data-testid="editor-save-status"]')).toHaveText('Saved', {
 			timeout: 20000
 		});
 
 		await page.reload();
-		expect(await waitForMonacoWithRecovery(page, 20000), 'Monaco should recover after reload').toBe(
-			true
-		);
+		const recoveryEditorReady = await waitForMonacoWithRecovery(page, 20000);
+		if (!recoveryEditorReady) throw new Error('Monaco should recover after reload');
+
 		await expect(page.locator('.status-bar')).toBeVisible({ timeout: 15000 });
 
-		await expect
-			.poll(async () => getAllMonacoContent(page), { timeout: 45000 })
-			.toContain(marker);
+		await clickExplorerAction(page, 'More actions');
+		const reloadedPersistedFileNode = page.getByText(persistedBaseName).first();
+		await expect(reloadedPersistedFileNode).toBeVisible({ timeout: 30000 });
+		await reloadedPersistedFileNode.click();
+
+		await expect.poll(async () => getAllMonacoContent(page), { timeout: 45000 }).toContain(marker);
 	});
 
 	test('multi-user same-file typing sync', async ({ browser }) => {
@@ -232,26 +260,30 @@ test.describe('Repo happy path', () => {
 		const page1 = await ctx1.newPage();
 		const page2 = await ctx2.newPage();
 
-		await signInIfNeeded(page1);
-		await signInIfNeeded(page2);
+		try {
+			await signInIfNeeded(page1);
+			await signInIfNeeded(page2);
 
-		const projectTitle = await openRepoProject(page1);
-		await openRepoProject(page2, projectTitle);
+			const projectTitle = await openRepoProject(page1);
+			await openRepoProject(page2, projectTitle);
 
-		const sharedFile = `src/e2e-shared-${Date.now()}.ts`;
-		await createAndOpenSharedFile(page1, page2, sharedFile);
+			const sharedFile = `src/e2e-shared-${Date.now()}.ts`;
+			await createAndOpenSharedFile(page1, page2, sharedFile);
 
-		const seed = `// e2e-shared-seed-${Date.now()}`;
-		await typeAtEditorEnd(page1, seed);
-		await expect.poll(async () => getAllMonacoContent(page2), { timeout: 45000 }).toContain(seed);
+			const seed = `// e2e-shared-seed-${Date.now()}`;
+			await typeAtEditorEnd(page1, seed);
+			await expect.poll(async () => getAllMonacoContent(page2), { timeout: 45000 }).toContain(seed);
 
-		const marker = `// e2e-multi-sync-${Date.now()}`;
-		await typeAtEditorEnd(page1, marker);
+			const marker = `// e2e-multi-sync-${Date.now()}`;
+			await typeAtEditorEnd(page1, marker);
 
-		await expect.poll(async () => getAllMonacoContent(page2), { timeout: 45000 }).toContain(marker);
-
-		await ctx1.close();
-		await ctx2.close();
+			await expect
+				.poll(async () => getAllMonacoContent(page2), { timeout: 45000 })
+				.toContain(marker);
+		} finally {
+			await ctx1.close();
+			await ctx2.close();
+		}
 	});
 
 	test('multi-user concurrent edits converge', async ({ browser }) => {
@@ -266,46 +298,48 @@ test.describe('Repo happy path', () => {
 		const page1 = await ctx1.newPage();
 		const page2 = await ctx2.newPage();
 
-		await signInIfNeeded(page1);
-		await signInIfNeeded(page2);
+		try {
+			await signInIfNeeded(page1);
+			await signInIfNeeded(page2);
 
-		const projectTitle = await openRepoProject(page1);
-		await openRepoProject(page2, projectTitle);
+			const projectTitle = await openRepoProject(page1);
+			await openRepoProject(page2, projectTitle);
 
-		const sharedFile = `src/e2e-concurrent-${Date.now()}.ts`;
-		await createAndOpenSharedFile(page1, page2, sharedFile);
+			const sharedFile = `src/e2e-concurrent-${Date.now()}.ts`;
+			await createAndOpenSharedFile(page1, page2, sharedFile);
 
-		const seed = `// e2e-concurrent-seed-${Date.now()}`;
-		await typeAtEditorEnd(page1, seed);
-		await expect.poll(async () => getAllMonacoContent(page2), { timeout: 45000 }).toContain(seed);
+			const seed = `// e2e-concurrent-seed-${Date.now()}`;
+			await typeAtEditorEnd(page1, seed);
+			await expect.poll(async () => getAllMonacoContent(page2), { timeout: 45000 }).toContain(seed);
 
-		const markerA = `// e2e-concurrent-a-${Date.now()}`;
-		const markerB = `// e2e-concurrent-b-${Date.now()}`;
+			const markerA = `// e2e-concurrent-a-${Date.now()}`;
+			const markerB = `// e2e-concurrent-b-${Date.now()}`;
 
-		const typed = await Promise.all([
-			typeAtEditorEnd(page1, markerA),
-			typeAtEditorEnd(page2, markerB)
-		]);
-		expect(typed[0] && typed[1], 'Both concurrent edits should be applied').toBe(true);
+			await Promise.all([typeAtEditorEnd(page1, markerA), typeAtEditorEnd(page2, markerB)]);
 
-		const markerAToken = markerA.split('-').at(-1) ?? markerA;
-		const markerBToken = markerB.split('-').at(-1) ?? markerB;
+			const markerAToken = markerA.split('-').at(-1) ?? markerA;
+			const markerBToken = markerB.split('-').at(-1) ?? markerB;
 
-		await expect
-			.poll(
-				async () => `${await getAllMonacoContent(page1)}\n${await getAllMonacoContent(page2)}`,
-				{ timeout: 60000 }
-			)
-			.toContain(markerAToken);
-		await expect
-			.poll(
-				async () => `${await getAllMonacoContent(page1)}\n${await getAllMonacoContent(page2)}`,
-				{ timeout: 60000 }
-			)
-			.toContain(markerBToken);
+			await expect
+				.poll(async () => `${await getAllMonacoContent(page1)}`, { timeout: 60000 })
+				.toContain(markerAToken);
 
-		await ctx1.close();
-		await ctx2.close();
+			await expect
+				.poll(async () => `${await getAllMonacoContent(page2)}`, { timeout: 60000 })
+				.toContain(markerBToken);
+
+			// Both pages should have both markers (convergence)
+			await expect
+				.poll(async () => getAllMonacoContent(page1), { timeout: 30000 })
+				.toContain(markerBToken);
+
+			await expect
+				.poll(async () => getAllMonacoContent(page2), { timeout: 30000 })
+				.toContain(markerAToken);
+		} finally {
+			await ctx1.close();
+			await ctx2.close();
+		}
 	});
 
 	test('multi-user file create/delete sync + reconnect resume', async ({ browser }) => {
@@ -320,53 +354,57 @@ test.describe('Repo happy path', () => {
 		const page1 = await ctx1.newPage();
 		let page2 = await ctx2.newPage();
 
-		await signInIfNeeded(page1);
-		await signInIfNeeded(page2);
+		try {
+			await signInIfNeeded(page1);
+			await signInIfNeeded(page2);
 
-		const projectTitle = await openRepoProject(page1);
-		await openRepoProject(page2, projectTitle);
+			const projectTitle = await openRepoProject(page1);
+			await openRepoProject(page2, projectTitle);
 
-		const fileName = `src/e2e-collab-${Date.now()}.ts`;
+			const fileName = `src/e2e-collab-${Date.now()}.ts`;
 
-		page1.once('dialog', async (dialog) => {
-			await dialog.accept(fileName);
-		});
-		await clickExplorerAction(page1, 'New file');
-
-		const marker = `// e2e-reconnect-${Date.now()}`;
-		await typeAtEditorEnd(page1, marker);
-
-		await page2.close();
-		page2 = await ctx2.newPage();
-		await openRepoProject(page2, projectTitle);
-
-		// Ensure the created file is visible/opened in the reconnected client
-		// before asserting cross-client content sync.
-		await clickExplorerAction(page2, 'More actions');
-		const fileBaseName = fileName.split('/').at(-1) ?? fileName;
-		const reconnectedFileNode = page2.getByText(fileBaseName).first();
-		await expect(reconnectedFileNode).toBeVisible({ timeout: 30000 });
-		await reconnectedFileNode.click();
-
-		await expect.poll(async () => getAllMonacoContent(page2), { timeout: 60000 }).toContain(marker);
-
-		let promptHandled = false;
-		page1.on('dialog', async (dialog) => {
-			if (dialog.type() === 'prompt' && !promptHandled) {
-				promptHandled = true;
+			page1.once('dialog', async (dialog) => {
 				await dialog.accept(fileName);
-				return;
-			}
-			if (dialog.type() === 'confirm') {
-				await dialog.accept();
-				return;
-			}
-			await dialog.dismiss();
-		});
+			});
+			await clickExplorerAction(page1, 'New file');
 
-		await clickExplorerAction(page1, 'Delete path');
+			const marker = `// e2e-reconnect-${Date.now()}`;
+			await typeAtEditorEnd(page1, marker);
 
-		await ctx1.close();
-		await ctx2.close();
+			await page2.close();
+			page2 = await ctx2.newPage();
+			await openRepoProject(page2, projectTitle);
+
+			// Ensure the created file is visible/opened in the reconnected client
+			// before asserting cross-client content sync.
+			await clickExplorerAction(page2, 'More actions');
+			const fileBaseName = fileName.split('/').at(-1) ?? fileName;
+			const reconnectedFileNode = page2.getByText(fileBaseName).first();
+			await expect(reconnectedFileNode).toBeVisible({ timeout: 30000 });
+			await reconnectedFileNode.click();
+
+			await expect
+				.poll(async () => getAllMonacoContent(page2), { timeout: 60000 })
+				.toContain(marker);
+
+			let promptHandled = false;
+			page1.on('dialog', async (dialog) => {
+				if (dialog.type() === 'prompt' && !promptHandled) {
+					promptHandled = true;
+					await dialog.accept(fileName);
+					return;
+				}
+				if (dialog.type() === 'confirm') {
+					await dialog.accept();
+					return;
+				}
+				await dialog.dismiss();
+			});
+
+			await clickExplorerAction(page1, 'Delete path');
+		} finally {
+			await ctx1.close();
+			await ctx2.close();
+		}
 	});
 });

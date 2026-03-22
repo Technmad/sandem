@@ -28,6 +28,7 @@ export function createFileTree(
 	let lastSignature = $state('');
 	let refreshInFlight: Promise<void> | null = null;
 	let refreshInFlightSilent = false;
+	let lastRootFoldersSignature = $state('');
 
 	let expanded = $state<Record<string, true>>({});
 
@@ -71,12 +72,49 @@ export function createFileTree(
 				}
 
 				const rootFolders = getWorkspaceRootFolders();
+				const rootFoldersArray = Array.from(rootFolders).sort();
+				const nextRootFoldersSignature = rootFoldersArray.join('|');
+
+				if (!isSilent) {
+					console.log(
+						'[FileTree.refresh] root folders:',
+						rootFoldersArray,
+						'signature:',
+						nextRootFoldersSignature
+					);
+				}
+
 				const nextTree = await readDirRecursive(wc, '.', rootFolders);
 				const nextSignature = createSignature(nextTree);
 
-				if (nextSignature !== lastSignature) {
+				// Update tree if:
+				// - signature changed OR
+				// - root folders changed OR
+				// - tree is currently empty (force update to populate)
+				const shouldUpdate =
+					nextSignature !== lastSignature ||
+					nextRootFoldersSignature !== lastRootFoldersSignature ||
+					tree.length === 0;
+
+				if (!isSilent) {
+					console.log(
+						'[FileTree.refresh] shouldUpdate:',
+						shouldUpdate,
+						'tree.length:',
+						tree.length,
+						'nextTree.length:',
+						nextTree.length,
+						'lastSig:',
+						lastSignature?.slice(0, 50),
+						'nextSig:',
+						nextSignature?.slice(0, 50)
+					);
+				}
+
+				if (shouldUpdate) {
 					tree = nextTree;
 					lastSignature = nextSignature;
+					lastRootFoldersSignature = nextRootFoldersSignature;
 					expanded = pruneExpandedStatePure(expanded, nextTree);
 					if (!isSilent) console.log('[FileTree] Loaded', nextTree.length, 'root nodes');
 				}

@@ -113,8 +113,8 @@
 
 	:global([data-button-root].activity-btn.active) {
 		color: var(--text);
-		border-left-color: color-mix(in srgb, var(--accent) 72%, #007acc);
-		background: color-mix(in srgb, var(--bg) 88%, black);
+		border-left-color: color-mix(in srgb, var(--accent) 76%, var(--highlight));
+		background: color-mix(in srgb, var(--bg) 88%, var(--mg));
 	}
 
 	.activity-footer {

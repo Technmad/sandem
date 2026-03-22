@@ -28,7 +28,8 @@ export async function readDirRecursive(
 			relevantEntries.length,
 			'relevant (rootFolders.size:',
 			rootFolders.size,
-			')'
+			') rootFolders:',
+			Array.from(rootFolders)
 		);
 	}
 

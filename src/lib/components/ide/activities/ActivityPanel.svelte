@@ -1,13 +1,25 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import type { Snippet, Component } from 'svelte';
+	import Button from '$lib/components/ui/primitives/Button.svelte';
+	import Icon from '$lib/components/ui/primitives/Icon.svelte';
+
+	interface ActionButton {
+		id: string;
+		title?: string;
+		icon?: Component;
+		handler?: () => void | Promise<void>;
+		disabled?: boolean | (() => boolean);
+		isSpacer?: boolean;
+	}
 
 	interface Props {
 		title: string;
 		actions?: Snippet;
+		actionButtons?: ActionButton[];
 		children: Snippet;
 	}
 
-	let { title, actions, children }: Props = $props();
+	let { title, actions, actionButtons, children }: Props = $props();
 </script>
 
 <section class="activity-panel" aria-label={title}>
@@ -17,6 +29,28 @@
 		{#if actions}
 			<div class="panel-actions">
 				{@render actions()}
+			</div>
+		{:else if actionButtons}
+			<div class="panel-actions">
+				{#each actionButtons as btn (btn.id)}
+					{#if btn.isSpacer}
+						<div class="actions-spacer"></div>
+					{:else}
+						{@const isDisabled = typeof btn.disabled === 'function' ? btn.disabled() : btn.disabled}
+						<Button
+							variant="ghost"
+							tone="neutral"
+							size="icon"
+							class="panel-icon-action"
+							title={btn.title}
+							aria-label={btn.title}
+							onclick={btn.handler}
+							disabled={isDisabled}
+						>
+							<Icon icon={btn.icon} size={12} strokeWidth={1.75} />
+						</Button>
+					{/if}
+				{/each}
 			</div>
 		{/if}
 	</header>
@@ -75,10 +109,22 @@
 		padding: 0;
 		border-radius: 4px;
 		color: color-mix(in srgb, var(--muted) 92%, var(--text));
+		transition:
+			background 80ms linear,
+			color 80ms linear;
 	}
 
-	:global([data-button-root].panel-icon-action:hover) {
+	:global([data-button-root].panel-icon-action:hover:not(:disabled)) {
 		background: color-mix(in srgb, var(--fg) 74%, var(--bg));
 		color: var(--text);
+	}
+
+	:global([data-button-root].panel-icon-action:disabled) {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.actions-spacer {
+		flex: 1;
 	}
 </style>
