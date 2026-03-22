@@ -348,6 +348,9 @@ function createSvelteAuthClientBrowser({
 		}
 	});
 
+	// Ensure auth actions refresh session state in Better Auth and Convex state.
+	configureAuthSessionAutoRefresh(authClient);
+
 	// Set context to make auth state available to useAuth
 	setContext<AuthContext>(AUTH_CONTEXT_KEY, {
 		authClient,
@@ -410,6 +413,8 @@ function createSvelteAuthClientExternal({
 			isConvexAuthenticated = isConvexAuthenticated ? false : null;
 		};
 	});
+
+	configureAuthSessionAutoRefresh(authClient);
 
 	setContext<AuthContext>(AUTH_CONTEXT_KEY, {
 		authClient,
@@ -580,6 +585,70 @@ const handleOneTimeToken = async (authClient: AuthClient) => {
 		window.history.replaceState({}, '', url);
 	}
 };
+
+function isFunction(value: unknown): value is (...args: unknown[]) => unknown {
+	return typeof value === 'function';
+}
+
+async function refreshBetterAuthSession(authClient: AuthClient) {
+	const client = authClient as unknown as {
+		getSession?: (options?: unknown) => Promise<unknown>;
+		updateSession?: () => void;
+	};
+
+	try {
+		if (isFunction(client.getSession)) {
+			await client.getSession();
+		}
+		if (isFunction(client.updateSession)) {
+			client.updateSession();
+		}
+	} catch (error) {
+		console.warn('[createSvelteAuthClient] Failed to refresh auth session', error);
+	}
+}
+
+function configureAuthSessionAutoRefresh(authClient: AuthClient) {
+	const client = authClient as unknown as {
+		signIn?: {
+			email?: (...args: unknown[]) => Promise<unknown>;
+			social?: (...args: unknown[]) => Promise<unknown>;
+		};
+		signUp?: {
+			email?: (...args: unknown[]) => Promise<unknown>;
+		};
+		signOut?: () => Promise<unknown>;
+	};
+
+	async function proxyAsync(
+		original: (...args: unknown[]) => Promise<unknown>,
+		...args: unknown[]
+	) {
+		const result = await original(...args);
+		await refreshBetterAuthSession(authClient);
+		return result;
+	}
+
+	if (client.signIn?.email) {
+		const originalEmail = client.signIn.email.bind(client.signIn);
+		client.signIn.email = (...args: unknown[]) => proxyAsync(originalEmail, ...args);
+	}
+
+	if (client.signIn?.social) {
+		const originalSocial = client.signIn.social.bind(client.signIn);
+		client.signIn.social = (...args: unknown[]) => proxyAsync(originalSocial, ...args);
+	}
+
+	if (client.signUp?.email) {
+		const originalSignUp = client.signUp.email.bind(client.signUp);
+		client.signUp.email = (...args: unknown[]) => proxyAsync(originalSignUp, ...args);
+	}
+
+	if (client.signOut) {
+		const originalSignOut = client.signOut.bind(client);
+		client.signOut = () => proxyAsync(originalSignOut);
+	}
+}
 
 /* -------------------------------------------------------------------------- */
 /*                               useAuth hook                                 */
