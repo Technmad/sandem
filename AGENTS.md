@@ -208,3 +208,11 @@ Total structure: 38 index.ts files organized as 8 parent-level consolidators →
 - If `setup:test-user` appears skipped, ensure frontend server is running at `SITE_URL` or set `SKIP_SETUP_TEST_USER_IF_SITE_UNREACHABLE=0` to enforce failure.
 
 ---
+
+<!-- convex-ai-start -->
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read `src/convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+<!-- convex-ai-end -->

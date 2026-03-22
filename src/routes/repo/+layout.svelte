@@ -9,8 +9,7 @@
 	import { createSvelteAuthClient, useAuth } from '$lib/svelte/index.js';
 	import { createError } from '$lib/sveltekit/index.js';
 
-	import { authClient } from '$lib/context';
-	import { setIDEContext } from '$lib/context';
+	import { authClient, setIDEContext } from '$lib/context';
 	import { createRepoController } from '$lib/controllers';
 	import { createPanelsState, setPanelsContext } from '$lib/stores';
 
