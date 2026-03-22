@@ -1,0 +1,15 @@
+
+> sandem@0.0.1 changeset:add C:\projects\capstone\sandem
+> changeset
+
+[?25l[36m🦋 [39m What kind of change is this for [32msandem[39m? (current version is 0.0.1) [2m...[22m 
+[36m>[39m [36m[4mpatch[24m[39m
+  minor
+  major[3A[78G[?25h "main" exist and it's synced with remote?
+🦋  [33mwarn[39m     at getDivergedCommit (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+git@3.0.4\node_modules\@changesets\git\dist\changesets-git.cjs.js:63:11)
+🦋  [33mwarn[39m     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+🦋  [33mwarn[39m     at async getChangedFilesSince (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+git@3.0.4\node_modules\@changesets\git\dist\changesets-git.cjs.js:189:22)
+🦋  [33mwarn[39m     at async Object.getChangedPackagesSinceRef (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+git@3.0.4\node_modules\@changesets\git\dist\changesets-git.cjs.js:229:24)
+🦋  [33mwarn[39m     at async getVersionableChangedPackages (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+cli@2.30.0_@types+node@25.5.0\node_modules\@changesets\cli\dist\changesets-cli.cjs.js:235:27)
+🦋  [33mwarn[39m     at async add (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+cli@2.30.0_@types+node@25.5.0\node_modules\@changesets\cli\dist\changesets-cli.cjs.js:484:31)
+🦋  [33mwarn[39m     at async run (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+cli@2.30.0_@types+node@25.5.0\node_modules\@changesets\cli\dist\changesets-cli.cjs.js:1345:5)

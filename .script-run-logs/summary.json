@@ -1,0 +1,169 @@
+[
+  {
+    "name": "dev:client",
+    "status": "timeout",
+    "code": null,
+    "durationMs": 20009,
+    "reason": "likely long-running/interactive",
+    "logPath": ".script-run-logs/dev_client.log"
+  },
+  {
+    "name": "dev:frontend",
+    "status": "timeout",
+    "code": null,
+    "durationMs": 20013,
+    "reason": "likely long-running/interactive",
+    "logPath": ".script-run-logs/dev_frontend.log"
+  },
+  {
+    "name": "dev:server",
+    "status": "timeout",
+    "code": null,
+    "durationMs": 20020,
+    "reason": "likely long-running/interactive",
+    "logPath": ".script-run-logs/dev_server.log"
+  },
+  {
+    "name": "dev",
+    "status": "timeout",
+    "code": null,
+    "durationMs": 20013,
+    "reason": "likely long-running/interactive",
+    "logPath": ".script-run-logs/dev.log"
+  },
+  {
+    "name": "build",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 107892,
+    "logPath": ".script-run-logs/build.log"
+  },
+  {
+    "name": "preview",
+    "status": "failed",
+    "code": 1,
+    "durationMs": 5159,
+    "reason": "",
+    "logPath": ".script-run-logs/preview.log"
+  },
+  {
+    "name": "prepare",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 3982,
+    "logPath": ".script-run-logs/prepare.log"
+  },
+  {
+    "name": "prepack",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 46590,
+    "logPath": ".script-run-logs/prepack.log"
+  },
+  {
+    "name": "check",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 21423,
+    "logPath": ".script-run-logs/check.log"
+  },
+  {
+    "name": "check:watch",
+    "status": "timeout",
+    "code": null,
+    "durationMs": 20011,
+    "reason": "likely long-running/interactive",
+    "logPath": ".script-run-logs/check_watch.log"
+  },
+  {
+    "name": "format",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 9771,
+    "logPath": ".script-run-logs/format.log"
+  },
+  {
+    "name": "lint",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 30763,
+    "logPath": ".script-run-logs/lint.log"
+  },
+  {
+    "name": "test:unit",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 9764,
+    "logPath": ".script-run-logs/test_unit.log"
+  },
+  {
+    "name": "test",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 9865,
+    "logPath": ".script-run-logs/test.log"
+  },
+  {
+    "name": "test:e2e:install-browsers",
+    "status": "skipped",
+    "code": null,
+    "reason": "excluded by request"
+  },
+  {
+    "name": "test:e2e",
+    "status": "failed",
+    "code": 1,
+    "durationMs": 131836,
+    "reason": "",
+    "logPath": ".script-run-logs/test_e2e.log"
+  },
+  {
+    "name": "test:e2e:ui",
+    "status": "timeout",
+    "code": null,
+    "durationMs": 20016,
+    "reason": "likely long-running/interactive",
+    "logPath": ".script-run-logs/test_e2e_ui.log"
+  },
+  {
+    "name": "setup:test-user",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 4345,
+    "logPath": ".script-run-logs/setup_test-user.log"
+  },
+  {
+    "name": "changeset",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 7166,
+    "logPath": ".script-run-logs/changeset.log"
+  },
+  {
+    "name": "changeset:add",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 1501,
+    "logPath": ".script-run-logs/changeset_add.log"
+  },
+  {
+    "name": "version-packages",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 1090,
+    "logPath": ".script-run-logs/version-packages.log"
+  },
+  {
+    "name": "release",
+    "status": "passed",
+    "code": 0,
+    "durationMs": 1201,
+    "logPath": ".script-run-logs/release.log"
+  },
+  {
+    "name": "release:publish",
+    "status": "skipped",
+    "code": null,
+    "reason": "skipped to avoid accidental publish"
+  }
+]

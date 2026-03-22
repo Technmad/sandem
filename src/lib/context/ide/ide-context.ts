@@ -5,7 +5,7 @@ import type { IDEProject } from '$types/projects.js';
 
 const IDE_CONTEXT_KEY = Symbol('IDE');
 
-interface IDEContext {
+export interface IDEContext {
 	getWebcontainer: () => WebContainer;
 	// path is the full WC path e.g. "my-project/src/App.jsx".
 	// When omitted (e.g. before any tab is open) returns the default/first project.

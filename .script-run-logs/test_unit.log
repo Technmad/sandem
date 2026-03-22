@@ -1,0 +1,21 @@
+
+> sandem@0.0.1 test:unit C:\projects\capstone\sandem
+> vitest
+
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/projects/capstone/sandem[39m
+
+ [32m✓[39m src/lib/services/editor/createMonacoConfig.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/components/ui/primitives/Tabs.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/utils/editor/editorPaneView.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/demo.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/lib/sveltekit/index.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/services/editor/createFileWriter.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/utils/editor/explorerTreeOps.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/lib/services/editor/createAutoSaver.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m      Tests [22m [1m[32m21 passed[39m[22m[90m (21)[39m
+[2m   Start at [22m 22:12:18
+[2m   Duration [22m 7.07s[2m (transform 4.10s, setup 468ms, import 8.53s, tests 89ms, environment 31.78s)[22m
+

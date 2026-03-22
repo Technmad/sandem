@@ -27,6 +27,12 @@ export function createProjectSyncController(options: CreateProjectSyncController
 	let projects = $state<ProjectFolder[]>([]);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
+	let pollTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+	let pollRunning = false;
+	let syncInFlight: Promise<void> | null = null;
+	let stableSyncCount = 0;
+	const BASE_POLL_MS = 1200;
+	const MAX_POLL_MS = 7000;
 
 	/**
 	 * Get workspace root folders (project IDs to filter WebContainer root)
@@ -38,22 +44,94 @@ export function createProjectSyncController(options: CreateProjectSyncController
 	/**
 	 * Fetch projects from Convex
 	 */
-	async function syncProjects() {
+	function projectSignature(values: ProjectFolder[]): string {
+		return values
+			.map((project) => `${project._id}:${project.title}`)
+			.sort()
+			.join('|');
+	}
+
+	function getNextPollDelayMs() {
+		if (stableSyncCount < 2) return BASE_POLL_MS;
+		if (stableSyncCount < 6) return Math.min(BASE_POLL_MS * 2, MAX_POLL_MS);
+		if (stableSyncCount < 12) return Math.min(BASE_POLL_MS * 4, MAX_POLL_MS);
+		return MAX_POLL_MS;
+	}
+
+	function schedulePoll(delayMs: number) {
+		if (!pollRunning) return;
+		if (pollTimer) {
+			clearTimeout(pollTimer);
+		}
+
+		pollTimer = setTimeout(
+			async () => {
+				if (!pollRunning) return;
+				await syncProjects({ silent: true });
+				schedulePoll(getNextPollDelayMs());
+			},
+			Math.max(250, delayMs)
+		);
+	}
+
+	async function syncProjects(options?: { silent?: boolean }) {
+		if (syncInFlight) {
+			return syncInFlight;
+		}
+
+		const silent = !!options?.silent;
 		if (!owner) {
 			projects = [];
+			error = null;
+			stableSyncCount = 0;
 			return;
 		}
 
-		loading = true;
-		error = null;
+		if (!silent) {
+			loading = true;
+			error = null;
+		}
 
-		try {
-			const result = await convexClient.query(api.projects.getProjects, { owner });
-			projects = result;
-		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
-		} finally {
-			loading = false;
+		syncInFlight = (async () => {
+			try {
+				const before = projectSignature(projects);
+				const result = await convexClient.query(api.projects.getProjects, { owner });
+				projects = result;
+				error = null;
+
+				const after = projectSignature(result);
+				if (before === after) {
+					stableSyncCount += 1;
+				} else {
+					stableSyncCount = 0;
+				}
+			} catch (err) {
+				error = err instanceof Error ? err.message : String(err);
+				stableSyncCount = 0;
+			} finally {
+				syncInFlight = null;
+				if (!silent) {
+					loading = false;
+				}
+			}
+		})();
+
+		return syncInFlight;
+	}
+
+	function startPolling() {
+		if (pollRunning) return;
+		pollRunning = true;
+		stableSyncCount = 0;
+		void syncProjects({ silent: true });
+		schedulePoll(BASE_POLL_MS);
+	}
+
+	function stopPolling() {
+		pollRunning = false;
+		if (pollTimer) {
+			clearTimeout(pollTimer);
+			pollTimer = null;
 		}
 	}
 
@@ -70,7 +148,8 @@ export function createProjectSyncController(options: CreateProjectSyncController
 				entry: undefined
 			});
 
-			// Refresh projects list
+			// Known mutation event: immediate sync and backoff reset.
+			stableSyncCount = 0;
 			await syncProjects();
 			return id;
 		} catch (err) {
@@ -86,6 +165,7 @@ export function createProjectSyncController(options: CreateProjectSyncController
 	async function deleteProjectFolder(): Promise<boolean> {
 		try {
 			// TODO: Implement deleteProject mutation
+			stableSyncCount = 0;
 			await syncProjects();
 			return true;
 		} catch (err) {
@@ -105,6 +185,8 @@ export function createProjectSyncController(options: CreateProjectSyncController
 			return error;
 		},
 		getWorkspaceRootFolders,
+		startPolling,
+		stopPolling,
 		syncProjects,
 		createProjectFolder,
 		deleteProjectFolder

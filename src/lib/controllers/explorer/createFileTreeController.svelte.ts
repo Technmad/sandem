@@ -24,11 +24,16 @@ export function createFileTree(
 	let tree = $state<FileNode[]>([]);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
-	let refreshTimer = $state<ReturnType<typeof setInterval> | null>(null);
+	let refreshTimer = $state<ReturnType<typeof setTimeout> | null>(null);
 	let lastSignature = $state('');
 	let refreshInFlight: Promise<void> | null = null;
 	let refreshInFlightSilent = false;
 	let lastRootFoldersSignature = $state('');
+	let lastRefreshChanged = false;
+	let autoRefreshRunning = false;
+	let autoRefreshBaseIntervalMs = 1000;
+	let stableRefreshCount = 0;
+	const MAX_AUTO_REFRESH_INTERVAL_MS = 6000;
 
 	let expanded = $state<Record<string, true>>({});
 
@@ -62,6 +67,8 @@ export function createFileTree(
 			if (!isSilent) {
 				error = null;
 			}
+
+			let changed = false;
 
 			try {
 				const wc = getWebcontainer();
@@ -116,6 +123,7 @@ export function createFileTree(
 					lastSignature = nextSignature;
 					lastRootFoldersSignature = nextRootFoldersSignature;
 					expanded = pruneExpandedStatePure(expanded, nextTree);
+					changed = true;
 					if (!isSilent) console.log('[FileTree] Loaded', nextTree.length, 'root nodes');
 				}
 
@@ -134,6 +142,10 @@ export function createFileTree(
 				}
 				console.warn('[FileTree.refresh]', { isSilent, message, isNotReady });
 			} finally {
+				lastRefreshChanged = changed;
+				if (!isSilent) {
+					stableRefreshCount = 0;
+				}
 				refreshInFlight = null;
 				refreshInFlightSilent = false;
 				if (!isSilent) loading = false;
@@ -159,18 +171,58 @@ export function createFileTree(
 		return !!expanded[path];
 	}
 
+	function getNextRefreshDelayMs() {
+		if (tree.length === 0) {
+			return Math.min(autoRefreshBaseIntervalMs, 900);
+		}
+
+		if (stableRefreshCount < 2) return autoRefreshBaseIntervalMs;
+		if (stableRefreshCount < 6)
+			return Math.min(autoRefreshBaseIntervalMs * 2, MAX_AUTO_REFRESH_INTERVAL_MS);
+		if (stableRefreshCount < 12)
+			return Math.min(autoRefreshBaseIntervalMs * 4, MAX_AUTO_REFRESH_INTERVAL_MS);
+		return Math.min(autoRefreshBaseIntervalMs * 6, MAX_AUTO_REFRESH_INTERVAL_MS);
+	}
+
+	function scheduleAutoRefresh(delayMs: number) {
+		if (!autoRefreshRunning) return;
+		if (refreshTimer) {
+			clearTimeout(refreshTimer);
+		}
+
+		refreshTimer = setTimeout(
+			async () => {
+				if (!autoRefreshRunning) return;
+
+				await refresh({ silent: true });
+
+				if (lastRefreshChanged) {
+					stableRefreshCount = 0;
+				} else {
+					stableRefreshCount += 1;
+				}
+
+				scheduleAutoRefresh(getNextRefreshDelayMs());
+			},
+			Math.max(150, delayMs)
+		);
+	}
+
 	function startAutoRefresh(intervalMs = 1000) {
-		if (refreshTimer) return;
+		if (autoRefreshRunning) return;
 		console.log('[FileTree] Starting auto-refresh with interval', intervalMs);
-		refreshTimer = setInterval(() => {
-			void refresh({ silent: true });
-		}, intervalMs);
+		autoRefreshRunning = true;
+		autoRefreshBaseIntervalMs = Math.max(300, intervalMs);
+		stableRefreshCount = 0;
+		scheduleAutoRefresh(autoRefreshBaseIntervalMs);
 	}
 
 	function stopAutoRefresh() {
+		autoRefreshRunning = false;
 		if (!refreshTimer) return;
-		clearInterval(refreshTimer);
+		clearTimeout(refreshTimer);
 		refreshTimer = null;
+		stableRefreshCount = 0;
 	}
 
 	return {

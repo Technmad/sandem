@@ -1,0 +1,6 @@
+
+> sandem@0.0.1 test:e2e:ui C:\projects\capstone\sandem
+> playwright test --ui
+
+[dotenv@17.3.1] injecting env (4) from .env.test -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+ ELIFECYCLE  Command failed with exit code 3221225786.

@@ -1,0 +1,12 @@
+
+> sandem@0.0.1 prepack C:\projects\capstone\sandem
+> svelte-kit sync && svelte-package --tsconfig ./tsconfig.json && publint
+
+src\lib -> dist
+@sveltejs/package found the following issues while packaging your library:
+Avoid usage of `import.meta.env` in your code. It only works in apps bundled with Vite. Consider using packages like `esm-env` instead which works with all bundlers or without bundling.
+
+Running [1mpublint v0.3.18[22m for [1msandem[22m...
+Packing files with `pnpm pack`...
+Linting...
+[1m[32mAll good![39m[22m

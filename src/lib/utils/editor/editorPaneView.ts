@@ -1,14 +1,22 @@
 import type { EditorTab } from '$lib/stores';
+import type { AutoSaveStatus } from '$lib/services/editor/createAutoSaver.svelte.js';
 import type { QuickAction } from '$types/editor.js';
 
-export type SaveStatusVariant = '' | 'saved' | 'saving' | 'error';
+export type SaveStatusVariant = '' | 'saved' | 'saving' | 'unsaved' | 'session' | 'error';
 
-export function deriveEditorSaveStatusVariant(status: string | undefined): SaveStatusVariant {
-	const value = status?.toLowerCase();
-	if (!value) return '';
-	if (value.includes('error')) return 'error';
-	if (value.includes('saving')) return 'saving';
-	return 'saved';
+const STATUS_TO_VARIANT: Record<AutoSaveStatus, SaveStatusVariant> = {
+	Saved: 'saved',
+	'Saving...': 'saving',
+	'Unsaved changes': 'unsaved',
+	'Session only': 'session',
+	'Save failed': 'error'
+};
+
+export function deriveEditorSaveStatusVariant(
+	status: AutoSaveStatus | undefined
+): SaveStatusVariant {
+	if (!status) return '';
+	return STATUS_TO_VARIANT[status];
 }
 
 export function shouldShowEmptyEditorState(

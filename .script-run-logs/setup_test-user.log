@@ -1,0 +1,12 @@
+
+> sandem@0.0.1 setup:test-user C:\projects\capstone\sandem
+> npx tsx scripts/setup-test-user.ts
+
+[dotenv@17.3.1] injecting env (4) from .env.test -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+🔧 Setting up test user...
+   Email: test@example.com
+   Name: Test User
+   Site URL: http://localhost:5173
+
+ℹ️  Test user already exists. Verifying credentials...
+✅ Test user credentials verified!

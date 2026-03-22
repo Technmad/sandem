@@ -1,0 +1,14 @@
+
+> sandem@0.0.1 changeset C:\projects\capstone\sandem
+> cross-env CHANGESET_NON_INTERACTIVE=1 node scripts/changeset-wrapper.mjs
+
+ℹ️  Non-interactive environment detected. Running changeset status instead of interactive prompt.
+🦋  [31merror[39m Error: Failed to find where HEAD diverged from "main". Does "main" exist and it's synced with remote?
+🦋  [31merror[39m     at getDivergedCommit (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+git@3.0.4\node_modules\@changesets\git\dist\changesets-git.cjs.js:63:11)
+🦋  [31merror[39m     at async getChangedFilesSince (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+git@3.0.4\node_modules\@changesets\git\dist\changesets-git.cjs.js:189:22)
+🦋  [31merror[39m     at async Object.getChangedPackagesSinceRef (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+git@3.0.4\node_modules\@changesets\git\dist\changesets-git.cjs.js:229:24)
+🦋  [31merror[39m     at async getVersionableChangedPackages (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+cli@2.30.0_@types+node@25.5.0\node_modules\@changesets\cli\dist\changesets-cli.cjs.js:235:27)
+🦋  [31merror[39m     at async status (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+cli@2.30.0_@types+node@25.5.0\node_modules\@changesets\cli\dist\changesets-cli.cjs.js:1158:27)
+🦋  [31merror[39m     at async run (C:\projects\capstone\sandem\node_modules\.pnpm\@changesets+cli@2.30.0_@types+node@25.5.0\node_modules\@changesets\cli\dist\changesets-cli.cjs.js:1481:11)
+⚠️  changeset status could not complete in this environment (for example, missing/diverged main ref).
+   Skipping hard failure for non-interactive script audit.

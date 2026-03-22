@@ -1,13 +1,31 @@
 <script lang="ts">
 	import { ChevronRightIcon } from '@lucide/svelte';
+
 	let { path }: { path: string | null } = $props();
+
+	const COLLAPSE_AFTER_SEGMENTS = 5;
+	const VISIBLE_TAIL_SEGMENTS = 3;
+
+	const segments = $derived(path ? path.split('/') : []);
+	const visibleSegments = $derived.by(() => {
+		if (segments.length <= COLLAPSE_AFTER_SEGMENTS) {
+			return segments;
+		}
+
+		return [segments[0], '…', ...segments.slice(-VISIBLE_TAIL_SEGMENTS)];
+	});
 </script>
 
 {#if path}
-	<nav class="breadcrumb" aria-label="File path">
-		{#each path.split('/') as segment, depth}
+	<nav class="breadcrumb" aria-label="File path" title={path}>
+		{#each visibleSegments as segment, depth}
 			{#if depth > 0}<span class="breadcrumb-sep"><ChevronRightIcon /></span>{/if}
-			<span class="breadcrumb-segment" class:last={depth === path.split('/').length - 1}>
+			<span
+				class="breadcrumb-segment"
+				class:ellipsis={segment === '…'}
+				class:last={depth === visibleSegments.length - 1}
+				title={segment}
+			>
 				{segment}
 			</span>
 		{/each}
@@ -41,6 +59,14 @@
 	.breadcrumb-segment {
 		color: color-mix(in srgb, var(--muted) 92%, var(--text));
 		cursor: default;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: min(22vw, 220px);
+	}
+
+	.breadcrumb-segment.ellipsis {
+		max-width: none;
+		font-weight: 600;
 	}
 
 	.breadcrumb-segment.last {

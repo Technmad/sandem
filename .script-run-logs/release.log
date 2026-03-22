@@ -1,0 +1,6 @@
+
+> sandem@0.0.1 release C:\projects\capstone\sandem
+> node scripts/release-wrapper.mjs
+
+⚠️  npm authentication is not configured. Skipping release publish.
+   Configure npm auth with `npm adduser` or set NPM_TOKEN to publish.

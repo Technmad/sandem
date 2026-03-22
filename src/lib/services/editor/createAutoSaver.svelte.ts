@@ -1,8 +1,19 @@
 import { useConvexClient } from 'convex-svelte';
 import { api } from '$convex/_generated/api.js';
-import { resolveProjectFileName } from '$lib/utils/project/filesystem.js';
+import {
+	mergeProjectFilesWithPatches,
+	normalizeProjectFilePatches,
+	resolveProjectFileName
+} from '$lib/utils/project/filesystem.js';
 import type { IDEProject, ProjectId } from '$types/projects.js';
 import { isPersistedProject } from '$lib/utils/project/guards.js';
+
+export type AutoSaveStatus =
+	| 'Saved'
+	| 'Saving...'
+	| 'Unsaved changes'
+	| 'Session only'
+	| 'Save failed';
 
 export function createAutoSaver(getProject: () => IDEProject | undefined) {
 	// Gracefully degrade when there is no ConvexProvider in the tree
@@ -15,11 +26,47 @@ export function createAutoSaver(getProject: () => IDEProject | undefined) {
 		// No provider — demo / offline mode
 	}
 
-	let saveStatus = $state<'Saved' | 'Saving...' | 'Unsaved changes' | 'Session only'>('Saved');
+	let saveStatus = $state<AutoSaveStatus>('Saved');
 	let saveTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	// Track in-flight saves to avoid clobbering with stale data
 	const pendingSaves = new Map<string, string>(); // fileName -> latest content to save
+
+	function queuePendingSave(fileName: string, content: string) {
+		pendingSaves.set(fileName, content);
+	}
+
+	function queuePendingSaves(next: ReadonlyArray<{ fileName: string; content: string }>) {
+		for (const item of next) {
+			queuePendingSave(item.fileName, item.content);
+		}
+	}
+
+	async function persistProjectFilePatches(
+		projectId: ProjectId,
+		patches: ReadonlyArray<{ name: string; contents: string }>,
+		project: IDEProject
+	) {
+		try {
+			await convexClient!.mutation(api.projects.updateProjectFiles, {
+				id: projectId,
+				files: [...patches]
+			});
+			return;
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			const needsFallback =
+				message.includes('Could not find public function') ||
+				message.includes('updateProjectFiles');
+			if (!needsFallback) throw error;
+		}
+
+		const mergedFiles = mergeProjectFilesWithPatches(project.files, patches);
+		await convexClient!.mutation(api.projects.updateProject, {
+			id: projectId,
+			files: mergedFiles
+		});
+	}
 
 	async function flushPendingSaves() {
 		const project = getProject();
@@ -40,38 +87,41 @@ export function createAutoSaver(getProject: () => IDEProject | undefined) {
 		saveStatus = 'Saving...';
 		const snapshot = new Map(pendingSaves);
 		pendingSaves.clear();
+		const normalizedPatches = normalizeProjectFilePatches(
+			Array.from(snapshot.entries()).map(([name, contents]) => ({ name, contents })),
+			project.files
+		);
+
+		if (normalizedPatches.length === 0) {
+			saveStatus = 'Saved';
+			return;
+		}
 
 		try {
-			const updatedFiles = project.files.map((f) =>
-				snapshot.has(f.name) ? { ...f, contents: snapshot.get(f.name)! } : f
-			);
-
-			// Upsert brand-new files that are not in project.files yet (e.g. created from Explorer)
-			for (const [fileName, content] of snapshot) {
-				if (updatedFiles.some((f) => f.name === fileName)) continue;
-				updatedFiles.push({ name: fileName, contents: content });
-			}
-
-			await convexClient.mutation(api.projects.updateProject, {
-				id: projectId as ProjectId,
-				files: updatedFiles
-			});
+			await persistProjectFilePatches(projectId as ProjectId, normalizedPatches, project);
 
 			saveStatus = 'Saved';
 		} catch (err) {
 			console.error('Save failed', err);
 			// Re-queue failed saves — don't overwrite if a newer save came in during the flight
-			snapshot.forEach((content, fileName) => {
-				if (!pendingSaves.has(fileName)) {
-					pendingSaves.set(fileName, content);
+			for (const patch of normalizedPatches) {
+				if (!pendingSaves.has(patch.name)) {
+					pendingSaves.set(patch.name, patch.contents);
 				}
-			});
-			saveStatus = 'Unsaved changes';
+			}
+			saveStatus = 'Save failed';
 		}
 	}
 
 	/** Call only on local user input (not remote Yjs syncs). */
 	function triggerAutoSave(fileName: string, content: string) {
+		triggerAutoSaveBatch([{ fileName, content }]);
+	}
+
+	/** Call when a sync cycle produces multiple touched files. */
+	function triggerAutoSaveBatch(changes: ReadonlyArray<{ fileName: string; content: string }>) {
+		if (changes.length === 0) return;
+
 		const project = getProject();
 		const projectId = isPersistedProject(project) ? project._id : undefined;
 
@@ -80,10 +130,14 @@ export function createAutoSaver(getProject: () => IDEProject | undefined) {
 			return;
 		}
 
-		const normalizedName = resolveProjectFileName(fileName, project.files);
+		queuePendingSaves(
+			changes.map((change) => ({
+				fileName: resolveProjectFileName(change.fileName, project.files),
+				content: change.content
+			}))
+		);
 
 		saveStatus = 'Unsaved changes';
-		pendingSaves.set(normalizedName, content);
 		clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(flushPendingSaves, 1500);
 	}
@@ -92,9 +146,9 @@ export function createAutoSaver(getProject: () => IDEProject | undefined) {
 	async function forceSave(fileName: string, content: string) {
 		const project = getProject();
 		if (project) {
-			pendingSaves.set(resolveProjectFileName(fileName, project.files), content);
+			queuePendingSave(resolveProjectFileName(fileName, project.files), content);
 		} else {
-			pendingSaves.set(fileName, content);
+			queuePendingSave(fileName, content);
 		}
 		clearTimeout(saveTimeout);
 		await flushPendingSaves();
@@ -104,12 +158,23 @@ export function createAutoSaver(getProject: () => IDEProject | undefined) {
 		clearTimeout(saveTimeout);
 	}
 
+	/**
+	 * Flushes queued autosave mutations and stops the timer.
+	 * Intended for deterministic teardown paths.
+	 */
+	async function drainAndCleanup() {
+		clearTimeout(saveTimeout);
+		await flushPendingSaves();
+	}
+
 	return {
 		get status() {
 			return saveStatus;
 		},
 		triggerAutoSave,
+		triggerAutoSaveBatch,
 		forceSave,
+		drainAndCleanup,
 		cleanup
 	};
 }

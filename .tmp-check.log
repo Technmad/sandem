@@ -1,0 +1,9 @@
+
+> sandem@0.0.1 check C:\projects\capstone\sandem
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+Loading svelte-check in workspace: c:\projects\capstone\sandem
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39m

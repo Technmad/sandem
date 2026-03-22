@@ -19,11 +19,31 @@ export function createEditorRuntime(deps: EditorRuntimeDependencies) {
 
 	let session: CollaborationSession | null | undefined;
 	let ydoc: Y.Doc | undefined;
-	let snapshotTimer: ReturnType<typeof setTimeout> | undefined;
+	let persistTimer: ReturnType<typeof setTimeout> | undefined;
+	const lastPersistedByFile = new Map<string, string>();
+	let persistFlushCount = 0;
+	let persistedFileCount = 0;
 
 	let synced = false;
 	const seeds = new Set<string>();
 	const bindings = new Map<string, ModelBinding>();
+	const editorDisposables: Monaco.IDisposable[] = [];
+
+	function registerEditorDisposable(disposable: Monaco.IDisposable | undefined) {
+		if (!disposable) return;
+		editorDisposables.push(disposable);
+	}
+
+	function disposeEditorDisposables() {
+		while (editorDisposables.length > 0) {
+			const disposable = editorDisposables.pop();
+			try {
+				disposable?.dispose();
+			} catch {
+				// ignore listener disposal issues during teardown
+			}
+		}
+	}
 
 	function getEditor() {
 		return editor;
@@ -72,43 +92,96 @@ export function createEditorRuntime(deps: EditorRuntimeDependencies) {
 		syncActiveEditorModel();
 		deps.onStatusSync();
 
-		editor.onDidChangeModelContent(() => {
-			const activePath = deps.getActivePath();
-			if (!activePath || !editor) return;
+		registerEditorDisposable(
+			editor.onDidChangeModelContent(() => {
+				const activePath = deps.getActivePath();
+				if (!activePath || !editor) return;
 
-			const content = editor.getValue();
-			deps.onStatusSync();
-			deps.onPersist({
-				activePath,
-				projectFileName: deps.toProjectFile(activePath),
-				content
-			});
-		});
+				const content = editor.getValue();
+				deps.onStatusSync();
+				deps.onPersist({
+					activePath,
+					projectFileName: deps.toProjectFile(activePath),
+					content
+				});
+			})
+		);
 	}
 
 	function setupStatusListeners() {
 		if (!editor) return;
-		editor.onDidChangeCursorPosition(() => deps.onStatusSync());
-		editor.onDidChangeModel(() => deps.onStatusSync());
+		registerEditorDisposable(editor.onDidChangeCursorPosition(() => deps.onStatusSync()));
+		registerEditorDisposable(editor.onDidChangeModel(() => deps.onStatusSync()));
 	}
 
-	function persistYDocSnapshot(nextYDoc: Y.Doc) {
+	function seedPersistSignatures(nextYDoc: Y.Doc) {
+		lastPersistedByFile.clear();
 		const project = deps.getProject();
 		for (const file of project.files) {
-			const content = nextYDoc.getText(file.name).toString();
-			deps.onPersist({
-				activePath: deps.toWebPath(file.name),
-				projectFileName: file.name,
-				content
-			});
+			lastPersistedByFile.set(file.name, nextYDoc.getText(file.name).toString());
 		}
 	}
 
-	function scheduleSnapshotPersist(nextYDoc: Y.Doc) {
-		clearTimeout(snapshotTimer);
-		snapshotTimer = setTimeout(() => {
-			persistYDocSnapshot(nextYDoc);
-		}, 1200);
+	function persistChangedYDocFiles(nextYDoc: Y.Doc) {
+		const project = deps.getProject();
+		let changedFiles = 0;
+		const payloads: Array<{
+			activePath: string;
+			projectFileName: string;
+			content: string;
+		}> = [];
+		for (const file of project.files) {
+			const fileName = file.name;
+			const content = nextYDoc.getText(fileName).toString();
+			const previous = lastPersistedByFile.get(fileName);
+			if (previous === content) continue;
+
+			lastPersistedByFile.set(fileName, content);
+			changedFiles += 1;
+			payloads.push({
+				activePath: deps.toWebPath(fileName),
+				projectFileName: fileName,
+				content
+			});
+		}
+
+		return {
+			payloads,
+			changedFiles,
+			totalFiles: project.files.length
+		};
+	}
+
+	function scheduleChangedFilesPersist(nextYDoc: Y.Doc) {
+		clearTimeout(persistTimer);
+		persistTimer = setTimeout(() => {
+			const metrics = persistChangedYDocFiles(nextYDoc);
+
+			if (metrics.payloads.length > 0) {
+				if (deps.onPersistBatch) {
+					deps.onPersistBatch(metrics.payloads);
+				} else {
+					for (const payload of metrics.payloads) {
+						deps.onPersist(payload);
+					}
+				}
+			}
+
+			persistFlushCount += 1;
+			persistedFileCount += metrics.changedFiles;
+
+			if (
+				typeof window !== 'undefined' &&
+				window.localStorage.getItem('sandem.debug.editor') === '1'
+			) {
+				console.debug('[EditorPersist]', {
+					flush: persistFlushCount,
+					changedFiles: metrics.changedFiles,
+					totalFiles: metrics.totalFiles,
+					persistedFileCount
+				});
+			}
+		}, 900);
 	}
 
 	function setupCollaborativeModels() {
@@ -126,23 +199,11 @@ export function createEditorRuntime(deps: EditorRuntimeDependencies) {
 				if (synced) return;
 				synced = true;
 				seedProjectFromConvex();
-				scheduleSnapshotPersist(ydoc ?? session!.ydoc);
+				seedPersistSignatures(ydoc ?? session!.ydoc);
 			},
 			onYDocUpdate: (nextYDoc: Y.Doc, origin: unknown) => {
 				if (!synced || origin === 'seed') return;
-				const activePath = deps.getActivePath();
-				if (!activePath) return;
-
-				const projectFileName = deps.toProjectFile(activePath);
-				const content = nextYDoc.getText(projectFileName).toString();
-
-				deps.onPersist({
-					activePath,
-					projectFileName,
-					content
-				});
-
-				scheduleSnapshotPersist(nextYDoc);
+				scheduleChangedFilesPersist(nextYDoc);
 			}
 		});
 
@@ -173,11 +234,20 @@ export function createEditorRuntime(deps: EditorRuntimeDependencies) {
 	}
 
 	function cleanup() {
-		clearTimeout(snapshotTimer);
+		clearTimeout(persistTimer);
+		lastPersistedByFile.clear();
+		persistFlushCount = 0;
+		persistedFileCount = 0;
+		disposeEditorDisposables();
 		destroyModelBindings(bindings);
+		session?.dispose();
 		session?.provider.destroy();
 		session?.leaveRoom();
+		session = null;
+		ydoc = undefined;
 		editor?.dispose();
+		editor = undefined;
+		instance = undefined;
 	}
 
 	return {

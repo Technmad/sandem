@@ -1,6 +1,16 @@
 import type * as Monaco from 'monaco-editor';
 import type { EditorStatusStore } from '../../../types/hooks.js';
 
+export function getPrimaryModifierKeyLabel(platform?: string): 'Ctrl' | 'Cmd' {
+	const value = (platform ?? '').toLowerCase();
+	return value.includes('mac') ? 'Cmd' : 'Ctrl';
+}
+
+export function toPlatformShortcutKeyLabel(key: string, platform?: string): string {
+	if (key !== 'Ctrl') return key;
+	return getPrimaryModifierKeyLabel(platform);
+}
+
 export function toStatusLanguage(languageId: string | undefined): string {
 	if (!languageId) return 'Plain Text';
 

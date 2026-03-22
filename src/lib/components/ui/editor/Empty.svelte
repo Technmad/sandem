@@ -1,5 +1,6 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
+	import { toPlatformShortcutKeyLabel } from '$lib/hooks/editor/createStatus.svelte.js';
 	import type { QuickAction } from '$types/editor.js';
 
 	let {
@@ -9,6 +10,13 @@
 		recentFiles?: readonly { label: string; path: string }[];
 		onOpenRecent?: (path: string) => void;
 	} = $props();
+
+	type NavigatorWithUAData = Navigator & { userAgentData?: { platform?: string } };
+
+	const currentPlatform =
+		typeof navigator !== 'undefined'
+			? ((navigator as NavigatorWithUAData).userAgentData?.platform ?? navigator.platform)
+			: '';
 </script>
 
 <article class="editor-empty" aria-label="Editor welcome">
@@ -20,7 +28,7 @@
 				<span class="shortcut-keys" aria-label={`${action.label} shortcut`}>
 					{#each action.keys as key, i}
 						{#if i > 0}<span class="shortcut-plus">+</span>{/if}
-						<kbd>{key}</kbd>
+						<kbd>{toPlatformShortcutKeyLabel(key, currentPlatform)}</kbd>
 					{/each}
 				</span>
 			</div>

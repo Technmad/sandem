@@ -1,0 +1,22 @@
+
+> sandem@0.0.1 dev:server C:\projects\capstone\sandem
+> npx convex dev
+
+ ELIFECYCLE  Command failed with exit code 3221225786.
+stalled. Run npx convex ai-files install to get started or npx convex ai-files disable to hide this message.
+[32m✔[39m 22:07:48 Convex functions ready! (8.5s)
+- Preparing to watch files...
+
+- Preparing Convex functions...
+
+[32m✔[39m 22:10:07 Convex functions ready! (14.62s)
+- Preparing Convex functions...
+
+[32m✔[39m 22:11:01 Convex functions ready! (12.62s)
+- Preparing Convex functions...
+
+[32m✔[39m 22:11:24 Convex functions ready! (10.74s)
+- Preparing Convex functions...
+
+[32m✔[39m 22:11:43 Convex functions ready! (11.43s)
+^C^C

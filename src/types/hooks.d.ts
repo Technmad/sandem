@@ -7,7 +7,8 @@ import type {
 	ChangeItem,
 	SearchMatch,
 	EditorStatusSnapshot,
-	EditorPersistPayload
+	EditorPersistPayload,
+	EditorPersistBatchPayload
 } from './editor.js';
 
 export type FileTreeController = {
@@ -100,6 +101,7 @@ export type EditorRuntimeDependencies = {
 	toWebPath: (projectFileName: string) => string;
 	readFile: (path: string) => Promise<string>;
 	onPersist: (payload: EditorPersistPayload) => void;
+	onPersistBatch?: (payload: EditorPersistBatchPayload) => void;
 	onStatusSync: () => void;
 };
 
