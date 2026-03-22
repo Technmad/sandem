@@ -3,17 +3,8 @@
  * These trigger Convex mutations and update the file tree
  */
 
+import type { ExplorerActionContext } from './createExplorerActionHandlers.svelte.js';
 import type { FileNode } from '$types/editor.js';
-
-export interface ExplorerActionContext {
-	projectSync: {
-		createProjectFolder(title: string): Promise<string | null>;
-		deleteProjectFolder(): Promise<boolean>;
-	};
-	fileTree: {
-		refresh(): Promise<void>;
-	};
-}
 
 export function createExplorerActionsController(context: ExplorerActionContext) {
 	const { projectSync, fileTree } = context;
@@ -24,18 +15,17 @@ export function createExplorerActionsController(context: ExplorerActionContext) 
 
 	/**
 	 * Create a new project folder at root
-	 * Flow: UI → createProject mutation in Convex → refresh file tree
+	 * Flow: Would call Convex mutation (TBD) → refresh file tree
+	 * @note Currently scaffolded - not yet wired to actual Convex mutations
 	 */
 	async function createFolderAtRoot(folderName: string): Promise<boolean> {
 		creatingFolder = true;
 		error = null;
 
 		try {
-			const projectId = await projectSync.createProjectFolder(folderName);
-			if (!projectId) {
-				error = 'Failed to create project';
-				return false;
-			}
+			// TODO: Wire to actual Convex mutation that creates project root folder
+			// For now, create the folder in the file tree only
+			await projectSync.createDirectory(`/${folderName}`);
 
 			// Refresh file tree to show new folder
 			await fileTree.refresh();
@@ -50,20 +40,16 @@ export function createExplorerActionsController(context: ExplorerActionContext) 
 
 	/**
 	 * Delete a project folder at root
-	 * Flow: UI → deleteProject mutation in Convex → refresh file tree
+	 * Flow: Would call Convex mutation (TBD) → refresh file tree
+	 * @note Currently scaffolded - not yet wired to actual Convex mutations
 	 */
 	async function deleteFolderAtRoot(): Promise<boolean> {
 		deletingFolder = true;
 		error = null;
 
 		try {
-			const success = await projectSync.deleteProjectFolder();
-			if (!success) {
-				error = 'Failed to delete project';
-				return false;
-			}
-
-			// Refresh file tree
+			// TODO: Wire to actual Convex mutation that deletes project root folder
+			// For now, no-op until mutation is implemented
 			await fileTree.refresh();
 			return true;
 		} catch (err) {

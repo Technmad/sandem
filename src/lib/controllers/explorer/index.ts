@@ -1,3 +1,4 @@
+export type { ExplorerActionContext } from './createExplorerActionHandlers.svelte.js';
 export * from './createExplorerActionHandlers.svelte.js';
 export * from './createExplorerActionsController.svelte.js';
 export * from './createExplorerActivity.svelte.js';

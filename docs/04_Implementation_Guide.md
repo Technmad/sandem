@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./03_Architecture_Details.md)** | [Next: Code Examples →](./05_Code_Examples.md)
+
+---
+
 # Implementation Guide: Convex ↔ Explorer Sync
 
 ## Created Files
@@ -189,11 +193,11 @@ await actions.createFolderAtRoot("my-project");
 - Verify paths are written as `projectId/filename`.
 - Verify WebContainer file permissions and runtime state.
 
+---
+
+**[← Previous](./03_Architecture_Details.md)** | [Next: Code Examples →](./05_Code_Examples.md) | [Home](./README.md)
+
 ### Folders exist but Explorer tree does not update
 
-- Verify `fileTree.refresh()` is awaited where needed.
-- Verify WebContainer is ready before refresh.
-- Check for timeout/network/runtime errors.
-- As of 2026-03-22, silent polling clears stale
-  "WebContainer not ready/not initialized" errors after runtime becomes available,
-  so manual Explorer refresh should not be required for initial folder visibility.
+Verify that `fileTree.refresh()` is called after project creation and that `getWorkspaceRootFolders()` returns the new project ID.
+**[← Previous](./03_Architecture_Details.md)** | [Next: Code Examples →](./05_Code_Examples.md) | [Home](./README.md)

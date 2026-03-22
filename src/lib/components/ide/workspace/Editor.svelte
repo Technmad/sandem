@@ -2,11 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 
 	import { requireIDEContext } from '$lib/context';
-	import {
-		createEditorStatus,
-		createEditorRuntime,
-		createEditorLifecycle
-	} from '$lib/hooks';
+	import { createEditorStatus, createEditorRuntime, createEditorLifecycle } from '$lib/hooks';
 	import { createAutoSaver, createFileWriter } from '$lib/services';
 	import { createEditorShortcuts } from '$lib/controllers';
 	import {

@@ -122,6 +122,39 @@ Use this checklist when picking up the project in a new session to get productiv
 - Docker status reference: `README.md` (compose exists, root Dockerfile currently missing)
 - Architecture docs hub: `docs/README.md` (ordered docs `00_...` through `10_...`)
 
+### lib/ Organization (3-tier index.ts structure)
+
+**New Structure** (updated 2026-03-22): All subdirectories now support single-line imports via consolidated index.ts files:
+
+Tier 1 (Parent level): `src/lib/components/`, `src/lib/controllers/`, `src/lib/hooks/`, `src/lib/services/`, `src/lib/stores/`, `src/lib/context/`, `src/lib/utils/`
+
+- Re-exports from domain-level (Tier 2) folders for convenient `import { Component } from '$lib/components'` patterns
+
+Tier 2 (Domain level): Within each parent, folders like `activity/`, `editor/`, `explorer/`, `workspace/`, etc.
+
+- Re-export their contained modules for convenient `import { handler } from '$lib/controllers/explorer'` patterns
+
+Tier 3 (Leaf level): Actual implementation files (components, functions, types)
+
+- Exported individually and aggregated through Tier 2 index files
+
+Example imports (all valid):
+
+```typescript
+// Leaf level
+import { createExplorerActionHandlers } from '$lib/controllers/explorer/createExplorerActionHandlers.svelte.js';
+
+// Domain level
+import { createExplorerActionHandlers } from '$lib/controllers/explorer';
+
+// Parent level
+import { createExplorerActionHandlers } from '$lib/controllers';
+```
+
+**Benefits**: Zero ambiguity (no `export *` conflicts), flexible import styles, clear dependency scoping.
+
+Total structure: 38 index.ts files organized as 8 parent-level consolidators → 19 domain-level re-exporters → leaf-level implementations. All verified with `pnpm run check` (0 errors) and `pnpm run build` (success).
+
 ### Conventions & best practices
 
 - Svelte 5 runes: prefer `$state`, `$props`, `$derived` (avoid legacy `export let` where possible)

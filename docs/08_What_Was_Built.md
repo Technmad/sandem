@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./07_Progress_Tracker.md)** | [Next: Documentation Map →](./09_Documentation_Map.md)
+
+---
+
 # 🎉 Implementation Complete: Convex ↔ Explorer Sync
 
 > Architecture & implementation for syncing VS Code Explorer with Convex database
@@ -93,6 +97,72 @@ export {
                     ↓
 9. Explorer re-renders with new folder ✓
 ```
+
+---
+
+## 📚 Library Organization (2026-03-22 Update)
+
+### 3-Tier Index.ts Structure
+
+All `src/lib/` subdirectories now export via consolidated index.ts files:
+
+| Tier       | Level  | Example                                                                 |
+| ---------- | ------ | ----------------------------------------------------------------------- |
+| **Tier 1** | Parent | `src/lib/controllers/index.ts` → re-exports all domains                 |
+| **Tier 2** | Domain | `src/lib/controllers/explorer/index.ts` → re-exports all explorer files |
+| **Tier 3** | Leaf   | `createExplorerActionHandlers.svelte.ts` → actual implementation        |
+
+**Import Examples** (all valid):
+
+```typescript
+// Leaf level (most specific)
+import { createExplorerActionHandlers } from '$lib/controllers/explorer/createExplorerActionHandlers.svelte.js';
+
+// Domain level (mid-level)
+import { createExplorerActionHandlers } from '$lib/controllers/explorer';
+
+// Parent level (most general)
+import { createExplorerActionHandlers } from '$lib/controllers';
+```
+
+**Key Benefits**:
+
+- ✅ Zero export conflicts (selective re-exports prevent ambiguity)
+- ✅ Flexible import styles (choose specificity level based on need)
+- ✅ Clear dependency scoping (types live at their definition tier)
+- ✅ TypeScript validation at each level
+
+**Structure Summary**:
+
+- 38 total index.ts files
+- 8 parent-level consolidators (components, config, context, controllers, hooks, services, stores, utils)
+- 19 domain-level re-exporters (activity, editor, explorer, header, workspace, etc.)
+- 10 README files documenting each top-level directory
+
+**Documentation**: Each `src/lib/*/README.md` explains contents, import patterns, design philosophy, and usage examples.
+
+---
+
+## 🔧 Implementation Refinements (2026-03-22)
+
+**Export Conflict Resolution**:
+
+Consolidated duplicate `ExplorerActionContext` definitions to prevent conflicts and improve module clarity.
+
+- Previously: Defined in both `createExplorerActionHandlers.svelte.ts` and `createExplorerActionsController.svelte.ts`
+- Now: Canonical definition in handlers, imported by controller
+- Resolution: Selective `export type` in explorer/index.ts prevents re-export duplication
+
+**Scaffolding Code Cleanup**:
+Updated `createExplorerActionsController` to match actual API:
+
+- Changed from calling non-existent `createProjectFolder()` → uses `createDirectory()`
+- Changed from calling non-existent `deleteProjectFolder()` → no-op until mutation exists
+- Added TODO comments marking future Convex mutation implementation points
+- Preserved controller interface for future use
+
+**File Organization**:
+Moved `language.ts` utility to `src/lib/utils/editor/` for better domain organization.
 
 ---
 
@@ -398,6 +468,10 @@ All type-safe, modern, and production-ready! ✓
 → **Open [`EXPLORER_SYNC_README.md`](EXPLORER_SYNC_README.md) now!**
 
 Then follow the integration steps in [`LAYOUT_INTEGRATION.md`](LAYOUT_INTEGRATION.md).
+
+---
+
+**[← Previous](./07_Progress_Tracker.md) | [Next: Documentation Map →](./09_Documentation_Map.md) | [Home](./README.md)**
 
 Good luck! 🎉
 

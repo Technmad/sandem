@@ -1,21 +1,48 @@
-# IDE components organization
+# Components organization
 
-> Last updated: 2026-03-20
+> Last updated: 2026-03-22
 
-IDE components are grouped by shell concern:
+Components are organized by shell concern and grouped into two domains.
 
-- `workspace/` → shell chrome and routing surfaces (`ActivityBar`, `Sidebar`, `Statusbar`)
-- `panes/` → primary IDE panes (`Editor`, `Terminal`, `Preview`)
-- `activities/` → sidebar activity panels (`Explorer`, `Search`, `Git`, `Debug`)
+## Structure
+
+- `ui/` → reusable UI primitives and patterns
+  - `primitives/` → base components (`Button`, `Card`, `Avatar`, `Tabs`, etc.)
+  - `editor/` → editor-specific UI (`FileTree`, `Breadcrumbs`, `SaveStatus`)
+  - `inputs/` → form inputs and controls (`SearchBar`, `DropDown`)
+  - `navigation/` → header and menu chrome (`AppHeader`, `AppMenu`, `MenuBar`)
+  - `layout/` → page layout primitives (`PageSection`)
+  - `theme/` → theme switcher and mode toggle
+  - `workspace/` → panel controls and resizing (`Resizer`, `PanelControls`)
+
+- `ide/` → IDE-specific shell components
+  - `activities/` → sidebar activity panels (`Explorer`, `Search`, `Git`, `Debug`)
+  - `workspace/` → IDE shell chrome (`ActivityBar`, `Sidebar`, `Statusbar`, `Editor`, `Terminal`, `Preview`)
 
 ## Import style
 
-Prefer grouped paths:
+Prefer single-line imports from consolidated parent paths:
 
-- `import Editor from '$lib/components/ide/panes/Editor.svelte'`
-- `import ActivityBar from '$lib/components/ide/workspace/ActivityBar.svelte'`
-- `import Search from '$lib/components/ide/activities/Search.svelte'`
+```typescript
+// UI components
+import { Button, Card, Avatar } from '$lib/components/ui/primitives';
+import { FileTree, Breadcrumbs } from '$lib/components/ui/editor';
+import { AppHeader, MenuBar } from '$lib/components/ui/navigation';
+import { ThemeSwitcher } from '$lib/components/ui/theme';
+import { Resizer } from '$lib/components/ui/workspace';
 
-Optional barrel:
+// IDE components
+import { Explorer, Search, Git } from '$lib/components/ide/activities';
+import { ActivityBar, Sidebar, Editor, Preview } from '$lib/components/ide/workspace';
 
-- `import { Editor } from '$lib/components/ide/index.js'`
+// Or from top-level barrel
+import { Button, Explorer, ActivityBar } from '$lib/components/ui';
+import { Editor, ActivityBar } from '$lib/components/ide';
+```
+
+## Design philosophy
+
+- Components are **pure presentation** — no internal state management
+- Styling uses global tokens in `src/app.css` + scoped `.svelte` files
+- Prefer `#snippet` props and event handlers over context
+- Center with `display: grid; place-items: center;` for robustness

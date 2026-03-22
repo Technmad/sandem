@@ -1,10 +1,10 @@
 # Contributing to Sandem
 
-> Last updated: 2026-03-21
+> Last updated: 2026-03-22
 >
 > **📚 For architecture & feature documentation, see [docs/README.md](./docs/README.md)**
 
-Thank you for contributing to Sandem. This guide focuses on local setup, validation, and PR quality.
+Thank you for contributing to Sandem. This guide focuses on local setup, validation, and PR quality standards.
 
 ## Documentation first (recommended)
 
@@ -124,22 +124,40 @@ The E2E tests cover these authentication scenarios:
 ```
 ├── src/
 │   ├── lib/
-│   │   ├── components/       # Reusable UI + IDE components
-│   │   ├── hooks/            # File tree, autosave, preview, etc.
-│   │   ├── context/          # Shared app contexts
-│   │   ├── stores/           # Shared state
-│   │   ├── svelte/           # Auth bridges/helpers
-│   │   └── sveltekit/        # Server-side helpers
+│   │   ├── components/       # Reusable UI + IDE components (3-tier with index.ts)
+│   │   ├── controllers/      # UI command orchestration (3-tier with index.ts)
+│   │   ├── hooks/            # Custom logic & composition (3-tier with index.ts)
+│   │   ├── services/         # Runtime, persistence, integration (3-tier with index.ts)
+│   │   ├── stores/           # Reactive state management
+│   │   ├── context/          # Svelte context providers
+│   │   ├── svelte/           # Auth bridges & helpers
+│   │   ├── sveltekit/        # Server-side helpers & error handling
+│   │   └── utils/            # Pure utilities & helpers (3-tier with index.ts)
 │   └── routes/
-│       ├── +layout.svelte    # Root layout (CSS, nav)
-│       ├── (home)/           # Home, auth, shop, test pages
-│       ├── repo/             # IDE shell route
-│       └── api/              # Auth and Liveblocks server endpoints
+│       ├── +layout.svelte    # Root layout (CSS, navigation)
+│       ├── (home)/           # Public pages: home, auth, shop, test
+│       ├── repo/             # IDE workspace shell route
+│       └── api/              # Server endpoints: auth, Liveblocks
 ├── e2e/                      # E2E tests (Playwright)
-├── scripts/                  # Development scripts
-└── src/convex/               # Convex backend
-
+├── scripts/                  # Development & release scripts
+├── docs/                     # Complete architecture & implementation guides
+└── src/convex/               # Convex backend (serverless database & auth)
 ```
+
+### Library Structure: 3-Tier Index Organization
+
+All `src/lib/*/` subdirectories follow a 3-tier consolidation pattern with `index.ts` re-exports:
+
+- **Tier 1 (Parent)**: `src/lib/components/`, `src/lib/controllers/`, etc.
+  - Re-exports from domain-level folders for `import { Component } from '$lib/components'`
+
+- **Tier 2 (Domain)**: Subdirectories like `activity/`, `editor/`, `explorer/`, `workspace/`
+  - Re-export their contained modules for `import { handler } from '$lib/controllers/explorer'`
+
+- **Tier 3 (Leaf)**: Actual implementation files (`.svelte`, `.ts`)
+  - Exported individually through Tier 2 index files
+
+This provides flexible import patterns—use leaf-level for specificity, domain-level for organization, or parent-level for simplicity.
 
 ## Useful scripts
 

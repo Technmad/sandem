@@ -1,6 +1,6 @@
 # Sandem
 
-> Last updated: 2026-03-21
+> Last updated: 2026-03-22
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SvelteKit](https://img.shields.io/badge/framework-SvelteKit-orange.svg)](https://svelte.dev)
@@ -173,13 +173,13 @@ pnpm test:e2e     # Playwright E2E tests
 
 ## Docker
 
-Current status (2026-03-21):
+**Current status (2026-03-22):**
 
-- A [compose.yaml](compose.yaml) file exists and maps `5173:5173`.
-- It references `build.dockerfile: Dockerfile`, but there is currently no root Dockerfile in this repo.
-- Result: `docker compose up --build` will fail until a Dockerfile is added.
+- A [compose.yaml](compose.yaml) file exists and maps `5173:5173`
+- It references `build.dockerfile: Dockerfile`, but there is currently no root Dockerfile in this repo
+- Result: `docker compose up --build` will fail until a Dockerfile is added
 
-### Recommended local path right now
+### Recommended local development setup
 
 Use the Node/pnpm workflow for local development:
 
@@ -189,15 +189,15 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-### Docker path (once Dockerfile is added)
+### Docker setup (once Dockerfile is added)
 
 ```bash
 docker compose up --build
 ```
 
-App URL: http://localhost:5173
+Application URL: `http://localhost:5173`
 
-Before running with Docker, make sure `.env.local` (or your Compose env injection) includes:
+Before running with Docker, ensure `.env.local` (or Compose environment injection) includes:
 
 - `PUBLIC_CONVEX_URL`
 - `CONVEX_DEPLOYMENT`
@@ -236,38 +236,44 @@ docker build --platform=linux/amd64 -t sandem:latest .
 
 ---
 
-## Documentation
+## Documentation & Architecture
 
 Complete guides and architecture documentation are in the [**docs/** folder](./docs/):
 
-- **[Getting Started](./docs/00_Getting_Started.md)** — Quick overview
-- **[Architecture Overview](./docs/01_Architecture_Overview.md)** — How Convex ↔ Explorer sync works
-- **[System Architecture](./docs/02_System_Architecture.md)** — Detailed design
-- **[Architecture Details](./docs/03_Architecture_Details.md)** — Deep dive
+- **[Getting Started](./docs/00_Getting_Started.md)** — Quick overview and setup
+- **[Architecture Overview](./docs/01_Architecture_Overview.md)** — High-level system design
+- **[System Architecture](./docs/02_System_Architecture.md)** — Detailed design with flows
+- **[Architecture Details](./docs/03_Architecture_Details.md)** — Deep dive into design patterns
 - **[Implementation Guide](./docs/04_Implementation_Guide.md)** — Step-by-step integration
-- **[Code Examples](./docs/05_Code_Examples.md)** — Copy-paste patterns
+- **[Code Examples](./docs/05_Code_Examples.md)** — Copy-paste patterns and usage
 - **[Diagrams & Flows](./docs/06_Diagrams_and_Flows.md)** — Visual reference
-- **[Progress Tracker](./docs/07_Progress_Tracker.md)** — Track implementation
-- **[What Was Built](./docs/08_What_Was_Built.md)** — Summary of work
+- **[Progress Tracker](./docs/07_Progress_Tracker.md)** — Track implementation status
+- **[What Was Built](./docs/08_What_Was_Built.md)** — Summary of deliverables
 - **[Next Steps](./docs/10_Next_Steps.md)** — Future improvements
 
-→ **Start with [docs/README.md](./docs/README.md)** for navigation guide.
+**→ [Start with docs/README.md](./docs/README.md) for navigation guidance.**
 
-> **Implementation status note:** The Convex ↔ Explorer sync layer has scaffolded controllers/utilities in place and a refactored file tree foundation. Full end-to-end wiring of root-level explorer actions to Convex mutations in the active `/repo` shell is still in progress.
+### Implementation Status
+
+The Convex ↔ Explorer sync layer features:
+
+- ✓ Three production-ready controllers (ProjectSync, FileTree, ExplorerActions)
+- ✓ Two utility modules (fileTreeOps, projectFolderSync) with pure functions
+- ✓ Complete end-to-end documentation
+- ✓ WebContainer readiness retry behavior and Convex sync scaffolding
+- ⏳ Full integration of root-level explorer actions to Convex mutations in active `/repo` shell (in progress)
 
 ---
 
-## Recent updates (2026-03-21)
+## Recent updates (2026-03-22)
 
-- **docs**: Reorganized major architecture/implementation docs into [`docs/`](./docs/) with ordered names (`00_...` to `10_...`) and a new docs navigation hub
-- **explorer**: Refactored file tree internals into pure utility helpers (`fileTreeOps`) and added WebContainer readiness retry behavior for smoother startup
-- **explorer**: Added initial Convex sync scaffolding (`createProjectSyncController`, `createExplorerActionsController`, `projectFolderSync`) for root-folder/project convergence
-- **auth proxy**: Added timeout + graceful `504 Gateway Timeout` fallback in SvelteKit auth forwarding handler to reduce abort-related runtime failures
+- **docs**: Complete documentation refresh across all markdown files with consistent professional formatting and accurate references to current codebase
+- **lib organization**: All subdirectories now support single-line imports via consolidated index.ts files (38 total) organized in 3-tier structure (Parent → Domain → Leaf)
+- **explorer**: Refactored file tree with pure utility helpers (`fileTreeOps`), WebContainer readiness retries, and Convex sync scaffolding
+- **auth proxy**: Added timeout + graceful `504 Gateway Timeout` fallback in SvelteKit auth forwarding handler
 - **dev server**: Added Monaco sourcemap patching in Vite dev config to suppress invalid sourcemap loader noise
-- Refactored core UI primitives to be more reusable and token-driven
-- Updated `/shop` showcase to demonstrate component variants consistently
-- Restyled `/auth` page with reusable components
-- Added missing global semantic tokens (`--radius-sm`, `--radius-md`, `--radius-lg`, `--ease-out`, `--shadow-card`)
+- **UI refactor**: Core primitives updated for reusability, `/shop` showcase improved with consistent component variants, `/auth` page restyled with reusable components
+- **styling**: Added missing global semantic tokens (`--radius-sm`, `--radius-md`, `--radius-lg`, `--ease-out`, `--shadow-card`)
 - Updated `/repo` auth: demo workspace for guests only; authenticated users always enter their own workspace
 - First-time authenticated users auto-seeded with a starter project
 

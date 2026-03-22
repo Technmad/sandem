@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./00_Getting_Started.md)** | [Next: System Architecture →](./02_System_Architecture.md)
+
+---
+
 # Convex ↔ Explorer Architecture Summary
 
 > How Sandem syncs VS Code Explorer with Convex database—inspired by StackBlitz
@@ -175,16 +179,12 @@ StackBlitz has years of production experience. This architecture borrows their c
 
 ## What's Next
 
-1. **Implement** - Wire up in your repo layout
-2. **Test** - Create/delete projects, verify Convex sync
-3. **Enhance** - Add rename, move, search
-4. **Persist** - Choose file sync strategy
-5. **Scale** - Add permissions, sharing, history
+→ Continue to [System Architecture](./02_System_Architecture.md) for detailed designs.
 
-## Questions?
+---
 
-See the detailed docs:
+**[← Previous](./00_Getting_Started.md)** | [Next: System Architecture →](./02_System_Architecture.md) | [Home](./README.md)
 
-- `ARCHITECTURE_EXPLORER.md` - Full system design
-- `IMPLEMENTATION_GUIDE.md` - Step-by-step checklist
-- `LAYOUT_INTEGRATION.md` - Code examples
+---
+
+**[← Previous](./00_Getting_Started.md)** | [Next: System Architecture →](./02_System_Architecture.md) | [Home](./README.md)

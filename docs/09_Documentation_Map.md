@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./08_What_Was_Built.md)** | [Next: Next Steps →](./10_Next_Steps.md)
+
+---
+
 # 📚 Documentation Index: Convex ↔ Explorer Sync
 
 > Complete guide to implementing VS Code Explorer synced with Convex database
@@ -178,6 +182,32 @@ Project Root/
 
 👉 **Next step**: Open [`EXPLORER_SYNC_README.md`](EXPLORER_SYNC_README.md)
 
+## 📚 Library Structure Documentation (2026-03-22)
+
+The `src/lib` folder now has comprehensive README files for each subdirectory:
+
+| Directory        | Purpose                    | Key Exports                                                             |
+| ---------------- | -------------------------- | ----------------------------------------------------------------------- |
+| **components/**  | UI presentation layer      | Svelte components organized by concern (primitives, editor, activities) |
+| **config/**      | Static app configuration   | Header links, menu items, app constants                                 |
+| **context/**     | Svelte context providers   | Auth client, IDE runtime context                                        |
+| **controllers/** | UI command orchestration   | Action handlers for explorer, editor, activity, workspace               |
+| **hooks/**       | Lifecycle & composition    | Editor lifecycle, pane composition utilities                            |
+| **services/**    | Persistence & runtime APIs | Convex saves, WebContainer integration, shell processes                 |
+| **stores/**      | Reactive state (Svelte 5)  | Activity tabs, editor tabs, panel visibility                            |
+| **svelte/**      | Client setup               | Convex + Better Auth client initialization                              |
+| **sveltekit/**   | SSR utilities              | Server-side auth, Convex HTTP client, error formatting                  |
+| **utils/**       | Pure utility functions     | Tree operations, file system helpers, language detection                |
+
+Each README explains:
+
+- What the folder contains
+- Import patterns (leveraging the 3-tier structure)
+- Design philosophy
+- Usage examples
+
+---
+
 ## 🆘 Troubleshooting
 
 ### Where do I start?
@@ -228,11 +258,16 @@ Project Root/
 ✓ Progress checklist & troubleshooting
 ✓ Type-safe, Svelte 5, production-ready code
 
+---
+
+**[← Previous](./08_What_Was_Built.md) | [Next: Next Steps →](./10_Next_Steps.md) | [Home](./README.md)**
+
 ## 🚀 Ready?
 
 **→ Start reading [`EXPLORER_SYNC_README.md`](EXPLORER_SYNC_README.md) now!**
 
 ---
 
-_Last updated: March 21, 2026_
+_Last updated: March 22, 2026_
 _Architecture inspired by StackBlitz, implemented for Sandem with Convex + Svelte 5_
+_Library consolidation: 3-tier index.ts structure (38 files) with zero export conflicts_

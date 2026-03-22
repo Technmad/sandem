@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./04_Implementation_Guide.md)** | [Next: Diagrams & Flows →](./06_Diagrams_and_Flows.md)
+
+---
+
 # Layout Integration Example
 
 File: `src/routes/repo/+layout.svelte`
@@ -158,6 +162,10 @@ File: `src/routes/repo/+layout.svelte`
    - Connects Convex projects to file tree roots
    - Only root folders are projects
    - Nested items are files in projects
+
+---
+
+**[← Previous](./04_Implementation_Guide.md)** | [Next: Diagrams & Flows →](./06_Diagrams_and_Flows.md) | [Home](./README.md)
 
 3. **onMount is critical**:
    - Fetch projects first

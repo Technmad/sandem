@@ -1,3 +1,7 @@
+**[← Home](./README.md)** | [Next: Architecture Overview →](./01_Architecture_Overview.md)
+
+---
+
 # README: Convex ↔ Explorer Integration
 
 ## What Was Built
@@ -116,8 +120,6 @@ export const deleteProject = mutation({
 
 That's it! Projects from Convex will appear as folders in Explorer.
 
-## Architecture Overview
-
 ```
 ┌─────────────────────────────────────┐
 │   Convex Database (projects table)  │
@@ -212,4 +214,4 @@ The difference: They built it for millions of users over years. You have a clean
 
 ---
 
-**Ready to implement?** Start with `LAYOUT_INTEGRATION.md` and follow the checklist in `IMPLEMENTATION_CHECKLIST.md`.
+**[← Home](./README.md)** | [Next: Architecture Overview →](./01_Architecture_Overview.md)

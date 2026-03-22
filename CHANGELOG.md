@@ -1,10 +1,41 @@
 # Changelog
 
-> Last updated: 2026-03-21
+> Last updated: 2026-03-22
 >
 > **📚 For complete project documentation, see [docs/README.md](./docs/README.md)**
 
 ## Unreleased
+
+### Library Structure & Documentation (2026-03-22)
+
+- **refactor: 3-tier index.ts consolidation**
+  - Organized all `src/lib/*/` subdirectories with consolidated index.ts files (38 total)
+  - Tier 1 (Parent): components, config, context, controllers, hooks, services, stores, utils, sveltekit
+  - Tier 2 (Domain): activity, editor, explorer, header, workspace, auth, ide, etc.
+  - Tier 3 (Leaf): actual implementation files (.svelte, .ts)
+  - Supports flexible import styles: leaf-level for specificity, domain-level for organization, parent-level for simplicity
+  - Zero export conflicts via selective re-exports at each tier
+
+- **docs: comprehensive lib/ README files**
+  - Created `src/lib/*/README.md` for all 10 top-level directories
+  - Each explains: contents, import patterns, design philosophy, usage examples
+  - Updated [docs/08_What_Was_Built.md](./docs/08_What_Was_Built.md) with library consolidation details
+  - Updated [docs/09_Documentation_Map.md](./docs/09_Documentation_Map.md) with lib structure reference
+  - Updated [docs/10_Next_Steps.md](./docs/10_Next_Steps.md) with consolidation in completed items
+
+- **fix: ExplorerActionContext export conflict**
+  - Consolidated duplicate type definition (was in both createExplorerActionHandlers and createExplorerActionsController)
+  - Now canonical definition in handlers, imported by controller
+  - Resolved via selective `export type` in explorer/index.ts
+
+- **fix: scaffolding code updates**
+  - Updated `createExplorerActionsController` to use actual `ProjectSyncController` methods
+  - Changed from calling non-existent `createProjectFolder()` → uses `createDirectory()`
+  - Changed from calling non-existent `deleteProjectFolder()` → no-op until mutation exists
+  - Added TODO comments for future Convex mutation implementation
+
+- **chore: file organization**
+  - Moved `language.ts` to `src/lib/utils/editor/` for better domain organization
 
 ### Patch Changes
 

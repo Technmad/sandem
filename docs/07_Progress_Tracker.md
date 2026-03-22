@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./06_Diagrams_and_Flows.md)** | [Next: What Was Built →](./08_What_Was_Built.md)
+
+---
+
 # Implementation Checklist
 
 > Track your progress integrating Convex ↔ Explorer sync
@@ -234,6 +238,10 @@ Date: ___________
 Phase: ___ / 8
 
 Current Issue:
+
+---
+
+**[← Previous](./06_Diagrams_and_Flows.md)** | [Next: What Was Built →](./08_What_Was_Built.md) | [Home](./README.md)
 _________________________________
 
 Next Step:

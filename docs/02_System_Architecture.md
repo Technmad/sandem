@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./01_Architecture_Overview.md)** | [Next: Architecture Details →](./03_Architecture_Details.md)
+
+---
+
 # Explorer + Convex Integration Architecture
 
 ## Overview
@@ -213,11 +217,20 @@ fileTree.refresh(); // Promise<void>
 
 ## Comparison: StackBlitz vs Sandem
 
-| Feature         | StackBlitz    | Sandem                  |
-| --------------- | ------------- | ----------------------- |
-| Projects source | Backend DB    | Convex projects table   |
-| Root folders    | Projects      | Project IDs from Convex |
-| File storage    | Cloud storage | WebContainer + Convex   |
-| Sync strategy   | Real-time     | TBD (A/B/C)             |
-| Permissions     | DB-backed     | Convex-backed (future)  |
-| Version history | Full          | Optional (future)       |
+| Feature          | StackBlitz    | Sandem                  |
+| ---------------- | ------------- | ----------------------- |
+| Projects source  | Backend API   | Convex table ✓          |
+| Root folders     | Projects      | Project IDs ✓           |
+| File persistence | Cloud storage | WebContainer + Convex   |
+| Sync strategy    | Real-time     | Choose your own (A/B/C) |
+
+---
+
+| **[← Previous](./01_Architecture_Overview.md)** | [Next: Architecture Details →](./03_Architecture_Details.md) | [Home](./README.md)     |
+| ----------------------------------------------- | ------------------------------------------------------------ | ----------------------- |
+| Projects source                                 | Backend DB                                                   | Convex projects table   |
+| Root folders                                    | Projects                                                     | Project IDs from Convex |
+
+---
+
+**[← Previous](./01_Architecture_Overview.md)** | [Next: Architecture Details →](./03_Architecture_Details.md) | [Home](./README.md)

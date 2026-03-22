@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./02_System_Architecture.md)** | [Next: Implementation Guide →](./04_Implementation_Guide.md)
+
+---
+
 # Sandem — Architecture Guide
 
 > Last updated: 2026-03-21  
@@ -612,14 +616,6 @@ let globalEditor; // NO! Makes testing impossible.
 
 ---
 
-## Questions?
+---
 
-Each folder has a `README.md` with specific guidance:
-
-- [src/lib/components/ui/README.md](src/lib/components/ui/README.md)
-- [src/lib/components/ide/README.md](src/lib/components/ide/README.md)
-- [src/lib/controllers/README.md](src/lib/controllers/README.md)
-- [src/lib/services/README.md](src/lib/services/README.md)
-- [src/lib/stores/README.md](src/lib/stores/README.md)
-
-Good luck! 🚀
+**[← Previous](./02_System_Architecture.md)** | [Next: Implementation Guide →](./04_Implementation_Guide.md) | [Home](./README.md)

@@ -4,10 +4,7 @@ import { resolveProjectFileName } from '$lib/utils/project/filesystem.js';
 import type { IDEProject, ProjectId, ProjectFile } from '$types/projects.js';
 import type { WebContainer } from '@webcontainer/api';
 import { getLiveblocksClient } from '$lib/liveblocks.config.js';
-import {
-	appendTerminalAudit,
-	collaborationPermissionsStore
-} from '$lib/stores';
+import { appendTerminalAudit, collaborationPermissionsStore } from '$lib/stores';
 
 type MutableProject = { files: ProjectFile[] };
 type FsEvent = Extract<Liveblocks['RoomEvent'], { type: 'fs-op' }>;

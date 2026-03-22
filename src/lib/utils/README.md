@@ -1,22 +1,40 @@
-# Maintenance note (2026-03-21)
-
-- Script verification pass completed and docs updated.
-
 # Utils organization
 
-> Last updated: 2026-03-20
+> Last updated: 2026-03-22
 
-Utilities are grouped by scope:
+Utilities provide pure, stateless helper functions for data transformation and tree operations.
 
-- `project/` → project/file-system/template helpers (`filesystem`, `template`)
-- `editor/` → editor/runtime language helpers (`language`)
+## Structure
+
+- `editor/` → editor and file tree utilities
+  - `editorPaneView.ts` → derive UI state from editor tabs
+  - `fileTreeOps.ts` → file tree construction and navigation
+  - `explorerTreeOps.ts` → tree searching and filtering
+  - `language.ts` → language detection from filenames
+  - `projectFolderSync.ts` → project folder initialization and serialization
+
+- `project/` → project and file system utilities
+  - `filesystem.ts` → project file tree conversion and path helpers
+  - `guards.ts` → type guards for project validation
+  - `projects.ts` → project comparison and deduplication
+  - `template.ts` → starter project template definitions
 
 ## Import style
 
-- `import { projectFilesToTree } from '$lib/utils/project/filesystem.js'`
-- `import { VITE_REACT_TEMPLATE } from '$lib/utils/project/template.js'`
-- `import { getLanguage } from '$lib/utils/editor/language.js'`
+Single-line imports from domain folders:
 
-Optional barrel:
+```typescript
+import { readDirRecursive, collectDirectoryPaths } from '$lib/utils/editor';
+import { projectFilesToTree, resolveProjectFileName } from '$lib/utils/project';
 
-- `import { getLanguage } from '$lib/utils/index.js'`
+// Or from top-level barrel
+import { readDirRecursive, projectFilesToTree } from '$lib/utils';
+```
+
+## Design philosophy
+
+- **Pure functions** — no side effects, no state
+- **Testable** — no mocks or setup required
+- **Stable** — return consistent structures for `$derived()`
+- **Composable** — small, single-purpose functions
+- **Tree operations** are BFS/DFS algorithms operating on readonly data

@@ -1,6 +1,10 @@
+**[← Home](./README.md) | [← Previous](./09_Documentation_Map.md)** | [Next: Testing Guide →](./TESTING.md)
+
+---
+
 # Sandem — To-Do
 
-> Last updated: 2026-03-21 · locally verified today: `pnpm lint` ✅, `pnpm check` ✅ (0 errors, 0 warnings)
+> Last updated: 2026-03-22 · locally verified: `pnpm lint` ✅, `pnpm check` ✅ (0 errors, 0 warnings), `pnpm build` ✅
 
 ---
 
@@ -66,6 +70,16 @@
 - [x] `app.css` semantic token system (themes + modes)
 - [x] Project delete has a confirmation step
 - [x] Project rename supports inline edit (double-click or action button)
+
+### Library structure consolidation (2026-03-22)
+
+- [x] 3-tier index.ts hierarchy: leaf → domain → parent levels
+- [x] 38 index.ts files with zero export conflicts
+- [x] All 10 lib/ subdirectories have README documentation
+- [x] Consolidated ExplorerActionContext export (removed duplicate)
+- [x] Fixed scaffolding code to use actual ProjectSyncController methods
+- [x] Moved language utility to `src/lib/utils/editor/`
+- [x] `pnpm run check` passes with 0 errors, `pnpm run build` succeeds
 
 ---
 
@@ -162,6 +176,10 @@
 - [ ] Docker production path completion (add Dockerfile + validate compose)
 - [ ] Accessibility audit (keyboard nav for tabs, tree, panes)
 - [ ] Mobile/responsive layout improvements for IDE panes
+
+---
+
+**[← Previous](./09_Documentation_Map.md) | [Next: Testing Guide →](./TESTING.md) | [Home](./README.md)**
 
 ---
 

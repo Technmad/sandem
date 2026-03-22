@@ -18,7 +18,7 @@
 
 	import { ActivityBar, Sidebar, Statusbar } from '$lib/components/ide/workspace';
 	import { Resizer } from '$lib/components/ui/workspace';
-	
+
 	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
 
 	let { children, data }: { children: Snippet; data: RepoLayoutData } = $props();

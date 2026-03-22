@@ -1,3 +1,7 @@
+**[← Home](./README.md) | [← Previous](./05_Code_Examples.md)** | [Next: Progress Tracker →](./07_Progress_Tracker.md)
+
+---
+
 # Visual Reference: Convex ↔ Explorer Sync
 
 ## System Flow Diagram
@@ -180,20 +184,20 @@
        ┌───────────┴───────────┐
        │                       │
        ▼                       ▼
-┌──────────────┐      ┌──────────────────┐
-│  Explorer    │      │  Editor Pane     │
-│  Component   │      │  Component       │
-│              │      │                  │
-│ Uses:        │      │ Uses:            │
-│ • fileTree   │      │ • fileTree (maybe)
-│ • actions    │      │ • projectSync    │
-│              │      │                  │
-│ Emits:       │      │ Emits:           │
-│ • create folder       │ • file changes   │
-│ • delete folder       │ • switch files   │
-│ • toggle expand       │                  │
-│ • select file         │                  │
-└──────────────┘      └──────────────────┘
+┌────────────────┐      ┌──────────────────┐
+│  Explorer      │      │  Editor Pane     │
+│  Component     │      │  Component       │
+│                │      │                  │
+│ Uses:          │      │ Uses:            │
+│ • fileTree     │      │ • fileTree       |
+│ • actions      │      │ • projectSync    │
+│                │      │                  │
+│ Emits:         │      │ Emits:           │
+│ • create folder|      │ • file changes   │
+│ • delete folder|      │ • switch files   │
+│ • toggle expand|      │                  │
+│ • select file  |      │                  │
+└────────────────┘      └──────────────────┘
        ▲                       ▲
        │                       │
        └───────────┬───────────┘
@@ -240,104 +244,115 @@ T=0.7s                                   [✓ Render!]
 ## Error Flow
 
 ```
+
+```
+
 User action
-    │
-    ▼
+│
+▼
 explorerActions.createFolderAtRoot()
-    │
-    ├─ projectSync.createProjectFolder()
-    │   │
-    │   ├─ Success ──→ projectSync.syncProjects()
-    │   │   │
-    │   │   └─→ fileTree.refresh()
-    │   │       │
-    │   │       └─→ Update UI
-    │   │
-    │   └─ Error ──→ explorerActions.error = "Convex error"
-    │       │
-    │       └─→ Display error to user
-    │
-    └─ catch (err)
-        │
-        └─→ explorerActions.error = "Network error"
-            │
-            └─→ Show error toast
+│
+├─ projectSync.createProjectFolder()
+│ │
+│ ├─ Success ──→ projectSync.syncProjects()
+│ │ │
+│ │ └─→ fileTree.refresh()
+│ │ │
+│ │ └─→ Update UI
+│ │
+│ └─ Error ──→ explorerActions.error = "Convex error"
+│ │
+│ └─→ Display error to user
+│
+└─ catch (err)
+│
+└─→ explorerActions.error = "Network error"
+│
+└─→ Show error toast
+
 ```
 
 ## File Tree Filtering (The Key!)
 
 ```
+
 Raw WebContainer Root Directory:
-  ./
-  ├── node_modules
-  ├── .git
-  ├── my-project-id-123
-  ├── another-project-id-456
-  └── temp-folder
+./
+├── node_modules
+├── .git
+├── my-project-id-123
+├── another-project-id-456
+└── temp-folder
 
 Convex Projects Table:
-  _id: "123", title: "my-project"
-  _id: "456", title: "another-project"
+\_id: "123", title: "my-project"
+\_id: "456", title: "another-project"
 
 Filter Applied:
-  getWorkspaceRootFolders() → ["123", "456"]
+getWorkspaceRootFolders() → ["123", "456"]
 
 File Tree After Filter:
-  ./
-  ├── my-project-id-123    ← Only projects!
-  └── another-project-id-456
+./
+├── my-project-id-123 ← Only projects!
+└── another-project-id-456
 
 Explorer Shows:
-  [📁] my-project
-  [📁] another-project
+[📁] my-project
+[📁] another-project
 
-  (temp-folder is hidden)
+(temp-folder is hidden)
+
 ```
 
 ## Type Safety Flow
 
 ```
+
 User Input
-    │
-    ▼
+│
+▼
 explorerActions.createFolderAtRoot(name: string)
-                                   ├─ name is typed ✓
-    │
-    ▼
+├─ name is typed ✓
+│
+▼
 projectSync.createProjectFolder(title: string)
-                               ├─ title is typed ✓
-    │
-    ▼
+├─ title is typed ✓
+│
+▼
 convexClient.mutation(api.projects.createProject, {...})
-                                    ├─ args are typed ✓
-                                    ├─ returns Promise<string> ✓
-    │
-    ▼
+├─ args are typed ✓
+├─ returns Promise<string> ✓
+│
+▼
 Result: projectId (typed as string)
-    │
-    ▼
+│
+▼
 projectSync.syncProjects()
-    │
-    ▼
+│
+▼
 projects: Array<ProjectFolder> (typed)
-    │
-    ▼
+│
+▼
 projectSync.getWorkspaceRootFolders(): string[]
-                                       ├─ return type is typed ✓
-    │
-    ▼
+├─ return type is typed ✓
+│
+▼
 fileTree.refresh()
-    │
-    ▼
+│
+▼
 tree: FileNode[] (typed)
-    │
-    ▼
+│
+▼
 {#each tree as node}
-       ├─ node.path: string ✓
-       ├─ node.type: 'file' | 'directory' ✓
-       └─ node.children?: FileNode[] ✓
+├─ node.path: string ✓
+├─ node.type: 'file' | 'directory' ✓
+└─ node.children?: FileNode[] ✓
+
 ```
 
 ---
 
+**[← Previous](./05_Code_Examples.md)** | [Next: Progress Tracker →](./07_Progress_Tracker.md) | [Home](./README.md)
+
 **Use these diagrams when explaining the architecture to others!**
+```
