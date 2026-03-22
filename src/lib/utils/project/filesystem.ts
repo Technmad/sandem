@@ -3,6 +3,7 @@ import type { FileSystemTree } from '@webcontainer/api';
 import type { Doc } from '$convex/_generated/dataModel.js';
 
 type ProjectFileLike = { name: string };
+type ProjectFileWithContents = { name: string; contents: string };
 
 /**
  * Converts a flat Convex project.files array into a WebContainer FileSystemTree.
@@ -55,6 +56,43 @@ export function resolveProjectFileName(
 	if (!hasRootedEntries && stripped) return stripped;
 
 	return path;
+}
+
+export function normalizeProjectFilePatches(
+	patches: ReadonlyArray<ProjectFileWithContents>,
+	files: ReadonlyArray<ProjectFileLike>
+): ProjectFileWithContents[] {
+	const deduped = new Map<string, string>();
+	for (const patch of patches) {
+		const normalizedName = resolveProjectFileName(patch.name, files);
+		deduped.set(normalizedName, patch.contents);
+	}
+
+	return Array.from(deduped.entries()).map(([name, contents]) => ({ name, contents }));
+}
+
+export function mergeProjectFilesWithPatches(
+	files: ReadonlyArray<ProjectFileWithContents>,
+	patches: ReadonlyArray<ProjectFileWithContents>
+): ProjectFileWithContents[] {
+	if (patches.length === 0) return [...files];
+
+	const byName = new Map(files.map((file) => [file.name, file.contents]));
+	for (const patch of patches) {
+		byName.set(patch.name, patch.contents);
+	}
+
+	const merged = files.map((file) => ({
+		name: file.name,
+		contents: byName.get(file.name) ?? file.contents
+	}));
+
+	for (const patch of patches) {
+		if (files.some((file) => file.name === patch.name)) continue;
+		merged.push({ name: patch.name, contents: patch.contents });
+	}
+
+	return merged;
 }
 
 export function toWebContainerPath(rootFolder: string, projectFileName: string): string {

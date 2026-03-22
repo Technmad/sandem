@@ -17,6 +17,13 @@ import type { FileNode } from '$types/editor.js';
  * - Must not contain Windows-invalid filename characters
  */
 export function validateProjectRelativePath(input: string): string {
+	function hasControlCharacters(value: string): boolean {
+		for (const char of value) {
+			if (char.charCodeAt(0) < 32) return true;
+		}
+		return false;
+	}
+
 	const trimmed = input.trim();
 	if (!trimmed) {
 		throw new Error('Path is required.');
@@ -45,7 +52,7 @@ export function validateProjectRelativePath(input: string): string {
 			throw new Error('Path traversal segments are not allowed.');
 		}
 
-		if (/[<>:"|?*\u0000-\u001F]/.test(segment)) {
+		if (/[<>:"|?*]/.test(segment) || hasControlCharacters(segment)) {
 			throw new Error(`Invalid path segment: ${segment}`);
 		}
 

@@ -78,17 +78,20 @@ After completing the code, ask the user if they want a playground link. Only cal
 
 **Pattern Overview**: Terminal now follows the same decomposition style as Explorer:
 
-1. **Controller** (`createTerminalPanelController.svelte.ts`): Owns panel UI state (`activeTab`, toolbar visibility, terminal error), tab metadata, terminal option defaults, and placeholder copy mapping.
-2. **Orchestrator** (`Terminal.svelte`): Wires IDE/runtime dependencies (permissions subscription, shell process, theme sync observer, panel context actions) and passes pure props/callbacks to children.
-3. **Presentation** (`TerminalPanelHeader.svelte`, `TerminalToolbar.svelte`, `TerminalViewport.svelte`): Stateless render components receiving data + callbacks via props.
+1. **Controllers** (`createTerminalPanelController.svelte.ts`, `createTerminalSessionsController.svelte.ts`, `createTerminalWorkspaceController.svelte.ts`): Own panel/session state plus injected runtime orchestration handlers (session runtime sync, shell lifecycle, panel actions, theme sync observer).
+2. **Orchestrator** (`Terminal.svelte`): Keeps only dependency wiring (permissions subscription + controller injection), then passes controller-derived props/callbacks to children.
+3. **Presentation** (`TerminalPanelHeader.svelte`, `TerminalToolbar.svelte`, `TerminalViewport.svelte`, `TerminalSessionPane.svelte`): Stateless render components receiving data + callbacks via props; supports multi-session tabs and optional two-pane split view.
 
 **Key Files**:
 
 - `src/lib/controllers/workspace/createTerminalPanelController.svelte.ts`
+- `src/lib/controllers/workspace/createTerminalSessionsController.svelte.ts`
+- `src/lib/controllers/workspace/createTerminalWorkspaceController.svelte.ts`
 - `src/lib/components/ide/workspace/Terminal.svelte`
 - `src/lib/components/ide/workspace/TerminalPanelHeader.svelte`
 - `src/lib/components/ide/workspace/TerminalToolbar.svelte`
 - `src/lib/components/ide/workspace/TerminalViewport.svelte`
+- `src/lib/components/ide/workspace/TerminalSessionPane.svelte`
 
 ---
 
@@ -127,20 +130,22 @@ Use this checklist when picking up the project in a new session to get productiv
 - Explorer pure tree ops: `src/lib/utils/editor/fileTreeOps.ts`
 - Git activity controller (real repository ops via isomorphic-git + WebContainer FS): `src/lib/controllers/activity/createGitActivity.svelte.ts`
 - Shell process controller (terminal bootstrap + git command shim aliasing): `src/lib/services/runtime/createShellProcess.svelte.ts`
-- Terminal panel UI controller + split presentation: `src/lib/controllers/workspace/createTerminalPanelController.svelte.ts`, `src/lib/components/ide/workspace/Terminal*.svelte`
+- Terminal panel/session UI controllers + split presentation: `src/lib/controllers/workspace/createTerminal*Controller.svelte.ts`, `src/lib/components/ide/workspace/Terminal*.svelte`
+- Editor pane orchestration controller (injected runtime + persistence wiring): `src/lib/controllers/editor/createEditorPaneController.svelte.ts`
 - Explorer/Convex sync scaffolding: `src/lib/hooks/explorer/createProjectSyncController.svelte.ts`, `src/lib/controllers/explorer/createExplorerActionsController.svelte.ts`
 - Project folder sync helpers: `src/lib/utils/editor/projectFolderSync.ts`
 - App-level SvelteKit error helpers: `src/lib/sveltekit/errors.ts`
 - SvelteKit auth forwarding + timeout handling: `src/lib/sveltekit/index.ts`
 - Lifecycle hooks: `src/lib/hooks/*`
 - Editor pane lifecycle composition: `src/lib/hooks/editor/createEditorLifecycle.svelte.ts`
+- Monaco loader/static asset config (build-safe): `src/lib/services/editor/createMonacoConfig.svelte.ts`, `vite.config.ts`, `static/monaco/vs/*`
 - UI command controllers: `src/lib/controllers/*`
 - Runtime/persistence services: `src/lib/services/*`
 - Editor pane pseudo-pure view helpers: `src/lib/utils/editor/editorPaneView.ts`
 - Layout and pages: `src/routes/+layout.svelte`, `src/routes/(home)/*`, `src/routes/repo/*`
 - Project file-tree conversion utility: `src/lib/utils/project/filesystem.ts`
 - Docker status reference: `README.md` (compose exists, root Dockerfile currently missing)
-- Architecture docs hub: `docs/README.md` (ordered docs `00_...` through `10_...`)
+- Architecture docs hub: `docs/README.md` (ordered docs `00_...` through `11_...`)
 
 ### lib/ Organization (3-tier index.ts structure)
 
@@ -206,5 +211,6 @@ Total structure: 38 index.ts files organized as 8 parent-level consolidators →
 - If explorer shows "WebContainer not ready", verify runtime boot via repo controller mount; the file tree now keeps polling and clears once the runtime is available.
 - If auth endpoints intermittently fail with aborted fetches, verify `PUBLIC_CONVEX_SITE_URL` and current timeout behavior in `src/lib/sveltekit/index.ts`.
 - If `setup:test-user` appears skipped, ensure frontend server is running at `SITE_URL` or set `SKIP_SETUP_TEST_USER_IF_SITE_UNREACHABLE=0` to enforce failure.
+- If Monaco fails to boot in production, verify `static/monaco/vs/loader.js` and `static/monaco/vs/editor/editor.main.js` exist (copied by `monaco-static-assets` plugin in `vite.config.ts`) and that the app can serve `/monaco/vs/*`.
 
 ---

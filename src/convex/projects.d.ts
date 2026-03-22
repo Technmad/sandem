@@ -67,6 +67,16 @@ export declare const updateProject: import("convex/server").RegisteredMutation<"
     entry?: string | undefined;
     id: import("convex/values").GenericId<"projects">;
 }, Promise<void>>;
+export declare const updateProjectFiles: import("convex/server").RegisteredMutation<"public", {
+    id: import("convex/values").GenericId<"projects">;
+    files: {
+        contents: string;
+        name: string;
+    }[];
+}, Promise<{
+    updated: number;
+    total: number;
+}>>;
 export declare const deleteProject: import("convex/server").RegisteredMutation<"public", {
     id: import("convex/values").GenericId<"projects">;
 }, Promise<void>>;

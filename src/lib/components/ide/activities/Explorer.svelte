@@ -77,6 +77,7 @@
 	const activeProject = $derived(
 		workspaceProjects.find((p) => p.id === ide.getActiveProjectId?.())
 	);
+	const activeFilePath = $derived(editorStore.activeTabPath);
 
 	type TimelineEvent = {
 		id: string;
@@ -552,7 +553,7 @@
 		searchQuery={explorerState.searchQuery}
 		hasSearch={explorerState.hasSearch}
 		{expandOnSearch}
-		activeFilePath={editorStore.activeTabPath}
+		{activeFilePath}
 		{timelineEvents}
 		isExpanded={(path: string) => fileTree.isExpanded(path)}
 		onDirClick={handleDirClick}

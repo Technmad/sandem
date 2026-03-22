@@ -23,12 +23,7 @@
 	}
 
 	$effect(() => {
-		const current = query;
-		const timer = setTimeout(() => {
-			void search.runSearch(current);
-		}, 180);
-
-		return () => clearTimeout(timer);
+		search.scheduleSearch(query);
 	});
 </script>
 
@@ -74,12 +69,16 @@
 					<span class="results-label">RESULTS</span>
 					<span class="results-count">
 						{#if search.searching}
-							Searching…
+							Searching… {search.progress.scanned}/{search.progress.total || '…'} files
 						{:else}
 							{search.results.length} result{search.results.length === 1 ? '' : 's'}
 						{/if}
 					</span>
 				</div>
+
+				{#if search.partialMessage}
+					<div class="search-notice">{search.partialMessage}</div>
+				{/if}
 
 				{#if search.error}
 					<div class="empty-state">Search failed: <strong>{search.error}</strong></div>
@@ -140,6 +139,15 @@
 	.results-count {
 		font-size: 10px;
 		color: var(--muted);
+		font-family: 'SF Mono', 'Cascadia Code', monospace;
+	}
+
+	.search-notice {
+		padding: 6px 10px;
+		font-size: 10px;
+		color: var(--muted);
+		border-bottom: 1px solid color-mix(in srgb, var(--border) 32%, transparent);
+		background: color-mix(in srgb, var(--mg) 90%, var(--bg));
 		font-family: 'SF Mono', 'Cascadia Code', monospace;
 	}
 

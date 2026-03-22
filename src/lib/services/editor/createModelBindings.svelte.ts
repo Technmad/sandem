@@ -57,4 +57,5 @@ export function createModelForPath({
 
 export function destroyModelBindings(bindings: Map<string, ModelBinding>) {
 	bindings.forEach((binding) => binding.destroy());
+	bindings.clear();
 }

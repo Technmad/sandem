@@ -245,21 +245,3 @@ export function normalizeToProjectPath(
 
 	return validateProjectRelativePath(value);
 }
-
-function getSelectedDirectory(tree: FileNode[], selectedPath: string | null): string | null {
-	if (!selectedPath) return null;
-
-	const selectedNode = findNode(tree, selectedPath);
-	if (selectedNode?.type === 'directory') {
-		return selectedNode.path;
-	}
-
-	if (selectedNode?.type === 'file') {
-		const segments = selectedNode.path.split('/');
-		segments.pop();
-		const parent = segments.join('/');
-		return parent || null;
-	}
-
-	return null;
-}

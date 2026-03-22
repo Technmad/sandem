@@ -1,0 +1,8 @@
+
+> sandem@0.0.1 test:e2e C:\projects\capstone\sandem
+> cross-env PLAYWRIGHT_BROWSERS_PATH=node_modules/.cache/ms-playwright playwright test
+
+[dotenv@17.3.1] injecting env (4) from .env.test -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Error: Timed out waiting 120000ms from config.webServer.
+
+[1A[2K ELIFECYCLE  Command failed with exit code 1.

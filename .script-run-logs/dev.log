@@ -1,0 +1,45 @@
+
+> sandem@0.0.1 dev C:\projects\capstone\sandem
+> concurrently --kill-others --prefix-colors red,yellow --names "svelte,convex" "pnpm dev:client" "pnpm dev:server"
+
+[convex] 
+[convex] > sandem@0.0.1 dev:server C:\projects\capstone\sandem
+[convex] > npx convex dev
+[convex] 
+[svelte] 
+[svelte] > sandem@0.0.1 dev:client C:\projects\capstone\sandem
+[svelte] > vite dev --host
+[svelte] 
+[svelte] Port 5173 is in use, trying another one...
+[svelte] Port 5174 is in use, trying another one...
+[svelte] 
+[svelte]   [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m3210[22m[2m[0m ms[22m
+[svelte] 
+[svelte]   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5175[22m/[39m
+[svelte]   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.1.135:[1m5175[22m/[39m
+[convex] - Preparing Convex functions...
+[convex] 
+[convex] Convex AI files are not installed. Run npx convex ai-files install to get started or npx convex ai-files disable to hide this message.
+[convex] [32m✔[39m 22:08:11 Convex functions ready! (6.44s)
+[convex] - Preparing to watch files...
+[convex] 
+[convex] - Preparing Convex functions...
+[convex] 
+[convex] [32m✔[39m 22:10:06 Convex functions ready! (14.38s)
+[convex] - Preparing Convex functions...
+[convex] 
+[convex] [32m✔[39m 22:11:01 Convex functions ready! (12.03s)
+[convex] - Preparing Convex functions...
+[convex] 
+[convex] [32m✔[39m 22:11:23 Convex functions ready! (10.57s)
+[convex] - Preparing Convex functions...
+[convex] 
+[convex] [32m✔[39m 22:11:44 Convex functions ready! (12.18s)
+[svelte] [2m10:14:47 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mplaywright-report/index.html[22m
+[convex] ^C^CTerminate batch job (Y/N)? 
+[svelte] ^C ELIFECYCLE  Command failed with exit code 3221225786.
+[convex]  ELIFECYCLE  Command failed with exit code 3221225786.
+[convex] pnpm dev:server exited with code 3221225786
+--> Sending SIGTERM to other processes..
+[svelte] pnpm dev:client exited with code 3221225786
+ ELIFECYCLE  Command failed with exit code 3221225786.

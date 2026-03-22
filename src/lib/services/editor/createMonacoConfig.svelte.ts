@@ -1,6 +1,26 @@
 import loader from '@monaco-editor/loader';
 import type * as Monaco from 'monaco-editor';
 
+function toUrlPath(basePath: string, suffix: string) {
+	const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
+	return `${normalizedBase}${suffix}`.replace(/\/$/, '');
+}
+
+function getMonacoVsCandidates() {
+	const base = import.meta.env.BASE_URL || '/';
+	const candidates = [toUrlPath(base, 'monaco/vs'), '/monaco/vs'];
+	return Array.from(new Set(candidates));
+}
+
+async function initMonacoWithVsPath(vsPath: string) {
+	(loader as unknown as { config: (cfg: object) => void }).config({
+		paths: { vs: vsPath }
+	});
+
+	const rawLoader = loader as unknown as { init: () => Promise<typeof Monaco> };
+	return rawLoader.init();
+}
+
 export const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
 	theme: 'vs-dark',
 	automaticLayout: true,
@@ -22,14 +42,14 @@ export const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions 
 };
 
 export async function createMonacoInstance() {
-	const vsPath = import.meta.env.DEV
-		? '/node_modules/monaco-editor/dev/vs'
-		: '/node_modules/monaco-editor/min/vs';
+	const errors: string[] = [];
+	for (const vsPath of getMonacoVsCandidates()) {
+		try {
+			return await initMonacoWithVsPath(vsPath);
+		} catch (error) {
+			errors.push(`${vsPath} :: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
 
-	(loader as unknown as { config: (cfg: object) => void }).config({
-		paths: { vs: vsPath }
-	});
-
-	const rawLoader = loader as unknown as { init: () => Promise<typeof Monaco> };
-	return rawLoader.init();
+	throw new Error(`Monaco failed to initialize from configured asset paths. ${errors.join(' | ')}`);
 }

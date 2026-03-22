@@ -46,3 +46,5 @@ export type EditorPersistPayload = {
 	projectFileName: string;
 	content: string;
 };
+
+export type EditorPersistBatchPayload = EditorPersistPayload[];

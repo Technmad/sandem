@@ -28,8 +28,25 @@ type SetupCollaborationOptions = {
 export type CollaborationSession = {
 	provider: LiveblocksYjsProvider;
 	ydoc: Y.Doc;
+	dispose: () => void;
 	leaveRoom: () => void;
 };
+
+function detachProviderListener(
+	provider: LiveblocksYjsProvider,
+	event: string,
+	handler: (...args: unknown[]) => void
+) {
+	const emitter = provider as unknown as {
+		off?: (event: string, listener: (...args: unknown[]) => void) => void;
+		removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
+		removeEventListener?: (event: string, listener: (...args: unknown[]) => void) => void;
+	};
+
+	emitter.off?.(event, handler);
+	emitter.removeListener?.(event, handler);
+	emitter.removeEventListener?.(event, handler);
+}
 
 function deriveRole(role: CollaborationRole | undefined, canWrite: boolean): CollaborationRole {
 	if (role) return role;
@@ -64,6 +81,8 @@ export function createCollaboration(
 
 	const ydoc = new Y.Doc();
 	const provider = new LiveblocksYjsProvider(room, ydoc);
+	const cleanupFns: Array<() => void> = [];
+	let disposed = false;
 
 	function updatePresenceList() {
 		const others = room.getOthers();
@@ -94,6 +113,11 @@ export function createCollaboration(
 
 	roomUnsubscribers.push(room.subscribe('my-presence', updatePresenceList));
 	roomUnsubscribers.push(room.subscribe('others', updatePresenceList));
+	cleanupFns.push(() => {
+		for (const unsubscribe of roomUnsubscribers) {
+			unsubscribe();
+		}
+	});
 	updatePresenceList();
 
 	editorDisposables.push(
@@ -130,10 +154,19 @@ export function createCollaboration(
 			room.updatePresence({ cursor: null, selection: null });
 		})
 	);
+	cleanupFns.push(() => {
+		for (const disposable of editorDisposables) {
+			disposable.dispose();
+		}
+	});
 
-	provider.on('sync', (isSynced: boolean) => {
+	const onProviderSync = (isSynced: boolean) => {
 		if (!isSynced) return;
 		options.seedProjectFromConvex();
+	};
+	provider.on('sync', onProviderSync);
+	cleanupFns.push(() => {
+		detachProviderListener(provider, 'sync', onProviderSync as (...args: unknown[]) => void);
 	});
 
 	for (const file of options.project.files) {
@@ -149,25 +182,36 @@ export function createCollaboration(
 
 		options.bindings.set(fullPath, {
 			model,
-			destroy: () => monacoBinding.destroy()
+			destroy: () => {
+				monacoBinding.destroy();
+				model.dispose();
+			}
 		});
 	}
 
-	ydoc.on('update', (_update: Uint8Array, origin: unknown) => {
+	const onYDocUpdate = (_update: Uint8Array, origin: unknown) => {
 		options.onYDocUpdate(ydoc, origin);
+	};
+	ydoc.on('update', onYDocUpdate);
+	cleanupFns.push(() => {
+		ydoc.off('update', onYDocUpdate);
 	});
+
+	function dispose() {
+		if (disposed) return;
+		disposed = true;
+		for (const cleanup of cleanupFns.splice(0)) {
+			cleanup();
+		}
+		resetCollaborationStores();
+	}
 
 	return {
 		provider,
 		ydoc,
+		dispose,
 		leaveRoom: () => {
-			for (const unsubscribe of roomUnsubscribers) {
-				unsubscribe();
-			}
-			for (const disposable of editorDisposables) {
-				disposable.dispose();
-			}
-			resetCollaborationStores();
+			dispose();
 			leave();
 		}
 	};

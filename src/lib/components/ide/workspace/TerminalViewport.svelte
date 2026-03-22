@@ -1,75 +1,102 @@
 <script lang="ts">
-	import { Xterm } from '@battlefieldduck/xterm-svelte';
 	import type {
 		ITerminalInitOnlyOptions,
 		ITerminalOptions,
 		Terminal
 	} from '@battlefieldduck/xterm-svelte';
-	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
-	import Button from '$lib/components/ui/primitives/Button.svelte';
 	import type { TerminalPanelTab } from '$lib/controllers/workspace/createTerminalPanelController.svelte.js';
+	import TerminalSessionPane from './TerminalSessionPane.svelte';
+
+	type TerminalSessionView = {
+		id: string;
+		label: string;
+		shellReady: boolean;
+		terminalError: string | null;
+		terminal?: Terminal;
+	};
 
 	type Props = {
 		activeTab: TerminalPanelTab;
 		placeholderText: string;
-		terminalError: string | null;
+		sessions: TerminalSessionView[];
+		activeSessionId: string;
+		splitSessionId: string | null;
 		canExecute: boolean;
-		shellReady: boolean;
 		options: ITerminalOptions & ITerminalInitOnlyOptions;
-		onLoad: () => Promise<void> | void;
-		onData: (data: string) => void;
-		onRetry: () => void;
-		terminal?: Terminal;
+		onLoad: (sessionId: string) => Promise<void> | void;
+		onData: (sessionId: string, data: string) => void;
+		onRetry: (sessionId: string) => void;
 	};
 
 	let {
 		activeTab,
 		placeholderText,
-		terminalError,
+		sessions,
+		activeSessionId,
+		splitSessionId,
 		canExecute,
-		shellReady,
 		options,
 		onLoad,
 		onData,
-		onRetry,
-		terminal = $bindable()
+		onRetry
 	}: Props = $props();
+
+	const activeSession = $derived(
+		sessions.find((session) => session.id === activeSessionId) ?? null
+	);
+	const splitSession = $derived(
+		splitSessionId
+			? (sessions.find(
+					(session) => session.id === splitSessionId && session.id !== activeSessionId
+				) ?? null)
+			: null
+	);
 </script>
 
 <div class="terminal-container">
 	{#if activeTab === 'TERMINAL'}
-		{#if terminalError}
-			<ErrorPanel
-				title="Terminal unavailable"
-				description="The terminal pane encountered an error."
-				message={terminalError}
-				testId="terminal-pane-error"
-				compact
-			>
-				{#snippet actions()}
-					<Button size="sm" variant="ghost" onclick={onRetry}>Retry terminal</Button>
-				{/snippet}
-			</ErrorPanel>
-		{:else if !canExecute}
-			<div class="panel-empty-state">Terminal is read-only for viewers.</div>
-		{:else}
-			<div class="terminal-pane">
-				<div class="xterm-host">
-					<Xterm bind:terminal {options} {onLoad} {onData} />
-				</div>
-				<div class="terminal-statusbar" role="status" aria-live="polite">
-					<div class="status-left">
-						<span class="status-pill">1: jsh</span>
-						<span class="status-dot {shellReady ? 'ready' : 'booting'}"></span>
-						<span class="status-text">{shellReady ? 'Connected' : 'Starting shell…'}</span>
-					</div>
-					<div class="status-right">
-						<span class="status-segment">UTF-8</span>
-						<span class="status-segment">LF</span>
-						<span class="status-segment">{canExecute ? 'Read/Write' : 'Read-Only'}</span>
-					</div>
-				</div>
+		{#if !activeSession}
+			<div class="panel-empty-state">No terminal session available.</div>
+		{:else if splitSession}
+			<div class="terminal-split-grid">
+				<TerminalSessionPane
+					sessionId={activeSession.id}
+					sessionLabel={activeSession.label}
+					shellReady={activeSession.shellReady}
+					terminalError={activeSession.terminalError}
+					{canExecute}
+					{options}
+					{onLoad}
+					{onData}
+					{onRetry}
+					bind:terminal={activeSession.terminal}
+				/>
+				<TerminalSessionPane
+					sessionId={splitSession.id}
+					sessionLabel={splitSession.label}
+					shellReady={splitSession.shellReady}
+					terminalError={splitSession.terminalError}
+					{canExecute}
+					{options}
+					{onLoad}
+					{onData}
+					{onRetry}
+					bind:terminal={splitSession.terminal}
+				/>
 			</div>
+		{:else}
+			<TerminalSessionPane
+				sessionId={activeSession.id}
+				sessionLabel={activeSession.label}
+				shellReady={activeSession.shellReady}
+				terminalError={activeSession.terminalError}
+				{canExecute}
+				{options}
+				{onLoad}
+				{onData}
+				{onRetry}
+				bind:terminal={activeSession.terminal}
+			/>
 		{/if}
 	{:else}
 		<div class="panel-empty-state">{placeholderText}</div>
@@ -84,91 +111,12 @@
 		background: color-mix(in srgb, var(--bg) 97%, black);
 	}
 
-	.terminal-pane {
+	.terminal-split-grid {
 		height: 100%;
 		display: grid;
-		grid-template-rows: minmax(0, 1fr) 24px;
-		min-height: 0;
-	}
-
-	.xterm-host {
-		min-height: 0;
-		overflow: hidden;
-	}
-
-	.terminal-statusbar {
-		display: grid;
-		grid-template-columns: 1fr auto;
-		align-items: center;
-		gap: 10px;
-		padding: 0 10px;
-		font-size: 11px;
-		line-height: 1;
-		font-family: var(--fonts-mono, 'Cascadia Mono', Consolas, monospace);
-		background: color-mix(in srgb, var(--mg) 88%, var(--bg));
-		border-top: 1px solid color-mix(in srgb, var(--border) 58%, transparent);
-		color: color-mix(in srgb, var(--muted) 85%, var(--text));
-	}
-
-	.status-left,
-	.status-right {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		min-width: 0;
-	}
-
-	.status-pill {
-		display: inline-flex;
-		align-items: center;
-		height: 18px;
-		padding: 0 6px;
-		border-radius: 4px;
-		font-size: 10px;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--text);
-		background: color-mix(in srgb, var(--fg) 76%, var(--bg));
-		border: 1px solid color-mix(in srgb, var(--border) 64%, transparent);
-	}
-
-	.status-dot {
-		width: 7px;
-		height: 7px;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--muted) 65%, var(--text));
-	}
-
-	.status-dot.ready {
-		background: color-mix(in srgb, #22c55e 78%, var(--text));
-		box-shadow: 0 0 0 1px color-mix(in srgb, #22c55e 45%, transparent);
-	}
-
-	.status-dot.booting {
-		background: color-mix(in srgb, #f59e0b 76%, var(--text));
-	}
-
-	.status-text {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.status-segment {
-		position: relative;
-		padding-left: 8px;
-	}
-
-	.status-segment::before {
-		content: '';
-		position: absolute;
-		left: -1px;
-		top: 50%;
-		width: 1px;
-		height: 11px;
-		transform: translateY(-50%);
-		background: color-mix(in srgb, var(--border) 62%, transparent);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1px;
+		background: color-mix(in srgb, var(--border) 65%, transparent);
 	}
 
 	.panel-empty-state {

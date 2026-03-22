@@ -2,6 +2,23 @@
 	import { Accordion } from 'bits-ui';
 	import { ChevronRight, Braces, Square, Variable, Type } from '@lucide/svelte';
 
+	type MonacoDisposable = {
+		dispose: () => void;
+	};
+
+	type MonacoModel = {
+		getValue: () => string;
+		onDidChangeContent?: (listener: () => void) => MonacoDisposable;
+	};
+
+	type MonacoEditor = {
+		getModel: () => MonacoModel | null;
+		onDidChangeModel?: (listener: () => void) => MonacoDisposable;
+		focus: () => void;
+		setPosition: (position: { lineNumber: number; column: number }) => void;
+		revealLineInCenter: (lineNumber: number) => void;
+	};
+
 	interface OutlineSymbol {
 		id: string;
 		line: number;
@@ -16,26 +33,16 @@
 	let { activeFilePath }: Props = $props();
 
 	let symbols = $state<OutlineSymbol[]>([]);
+	let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+	let cleanupEditorSubscriptions: (() => void) | null = null;
 
-	function getActiveEditor():
-		| {
-				getModel: () => { getValue: () => string } | null;
-				focus: () => void;
-				setPosition: (position: { lineNumber: number; column: number }) => void;
-				revealLineInCenter: (lineNumber: number) => void;
-		  }
-		| undefined {
+	const OUTLINE_DEBOUNCE_MS = 180;
+
+	function getActiveEditor(): MonacoEditor | undefined {
 		const monacoApi = (globalThis as { monaco?: { editor?: { getEditors?: () => unknown[] } } })
 			.monaco;
 		const editors = monacoApi?.editor?.getEditors?.() ?? [];
-		return editors[0] as
-			| {
-					getModel: () => { getValue: () => string } | null;
-					focus: () => void;
-					setPosition: (position: { lineNumber: number; column: number }) => void;
-					revealLineInCenter: (lineNumber: number) => void;
-			  }
-			| undefined;
+		return editors[0] as MonacoEditor | undefined;
 	}
 
 	function parseSymbols(content: string): OutlineSymbol[] {
@@ -139,6 +146,67 @@
 		symbols = parseSymbols(model.getValue());
 	}
 
+	function scheduleRefresh() {
+		if (refreshTimer) {
+			clearTimeout(refreshTimer);
+		}
+
+		refreshTimer = setTimeout(() => {
+			refreshTimer = null;
+			refreshOutline();
+		}, OUTLINE_DEBOUNCE_MS);
+	}
+
+	function clearScheduledRefresh() {
+		if (!refreshTimer) return;
+		clearTimeout(refreshTimer);
+		refreshTimer = null;
+	}
+
+	function clearEditorSubscriptions() {
+		cleanupEditorSubscriptions?.();
+		cleanupEditorSubscriptions = null;
+	}
+
+	function wireEditorSubscriptions() {
+		clearEditorSubscriptions();
+
+		const editor = getActiveEditor();
+		if (!editor) {
+			return;
+		}
+
+		const disposables: MonacoDisposable[] = [];
+
+		const bindModelContent = () => {
+			const model = editor.getModel();
+			if (!model?.onDidChangeContent) return;
+
+			disposables.push(
+				model.onDidChangeContent(() => {
+					scheduleRefresh();
+				})
+			);
+		};
+
+		bindModelContent();
+
+		if (editor.onDidChangeModel) {
+			disposables.push(
+				editor.onDidChangeModel(() => {
+					scheduleRefresh();
+					bindModelContent();
+				})
+			);
+		}
+
+		cleanupEditorSubscriptions = () => {
+			for (const disposable of disposables) {
+				disposable.dispose();
+			}
+		};
+	}
+
 	function jumpToLine(line: number) {
 		const editor = getActiveEditor();
 		if (!editor) return;
@@ -156,20 +224,19 @@
 	}
 
 	$effect(() => {
-		if (activeFilePath) {
-			// keep activeFilePath as a reactive dependency
+		if (!activeFilePath) {
+			clearScheduledRefresh();
+			clearEditorSubscriptions();
+			symbols = [];
+			return;
 		}
-		refreshOutline();
-	});
 
-	import { onMount } from 'svelte';
-	onMount(() => {
-		const timer = setInterval(() => {
-			refreshOutline();
-		}, 1200);
+		wireEditorSubscriptions();
+		scheduleRefresh();
 
 		return () => {
-			clearInterval(timer);
+			clearScheduledRefresh();
+			clearEditorSubscriptions();
 		};
 	});
 </script>

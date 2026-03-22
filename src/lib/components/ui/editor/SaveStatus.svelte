@@ -1,8 +1,13 @@
 <script lang="ts">
 	import { Check } from '@lucide/svelte';
 
-	let { status, variant }: { status: string; variant: 'saving' | 'saved' | 'error' | '' } =
-		$props();
+	let {
+		status,
+		variant
+	}: {
+		status: string;
+		variant: 'saving' | 'saved' | 'unsaved' | 'session' | 'error' | '';
+	} = $props();
 </script>
 
 {#if status}
@@ -10,6 +15,8 @@
 		class="save-status"
 		class:saving={variant === 'saving'}
 		class:saved={variant === 'saved'}
+		class:unsaved={variant === 'unsaved'}
+		class:session={variant === 'session'}
 		class:error={variant === 'error'}
 		data-testid="editor-save-status"
 	>
@@ -17,6 +24,8 @@
 			<span class="save-spinner"></span>
 		{:else if variant === 'saved'}
 			<Check size={10} strokeWidth={2} aria-hidden="true" />
+		{:else if variant === 'unsaved' || variant === 'session' || variant === 'error'}
+			<span class="save-indicator" aria-hidden="true"></span>
 		{/if}
 		{status}
 	</span>
@@ -49,10 +58,31 @@
 		background: color-mix(in srgb, var(--success) 7%, transparent);
 	}
 
+	.save-status.unsaved {
+		color: color-mix(in srgb, #fbbf24 84%, var(--text));
+		border-color: color-mix(in srgb, #f59e0b 34%, transparent);
+		background: color-mix(in srgb, #f59e0b 10%, transparent);
+	}
+
+	.save-status.session {
+		color: color-mix(in srgb, var(--muted) 90%, var(--text));
+		border-color: color-mix(in srgb, var(--border) 45%, transparent);
+		background: color-mix(in srgb, var(--fg) 72%, transparent);
+	}
+
 	.save-status.error {
 		color: color-mix(in srgb, var(--error) 88%, #f48771);
 		border-color: color-mix(in srgb, var(--error) 32%, transparent);
 		background: color-mix(in srgb, var(--error) 8%, transparent);
+	}
+
+	.save-indicator {
+		display: inline-block;
+		width: 6px;
+		height: 6px;
+		border-radius: 999px;
+		background: currentColor;
+		flex-shrink: 0;
 	}
 
 	.save-spinner {

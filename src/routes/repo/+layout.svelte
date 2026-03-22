@@ -136,6 +136,7 @@
 
 <div class="container">
 	<main class="repo-layout">
+	
 		<ActivityBar {panels} />
 
 		<section class="workspace-shell">

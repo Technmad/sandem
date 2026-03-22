@@ -1,0 +1,33 @@
+
+> sandem@0.0.1 check:watch C:\projects\capstone\sandem
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch
+
+Loading svelte-check in workspace: c:\projects\capstone\sandem
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39mWatching for file changes...Loading svelte-check in workspace: c:\projects\capstone\sandem
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39mWatching for file changes...Loading svelte-check in workspace: c:\projects\capstone\sandem
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39mWatching for file changes...Loading svelte-check in workspace: c:\projects\capstone\sandem
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39mWatching for file changes...Loading svelte-check in workspace: c:\projects\capstone\sandem
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39mWatching for file changes...Loading svelte-check in workspace: c:\projects\capstone\sandem
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39mWatching for file changes...Loading svelte-check in workspace: c:\projects\capstone\sandem
+Getting Svelte diagnostics...
+
+[32msvelte-check found 0 errors and 0 warnings
+[39mWatching for file changes...Terminate batch job (Y/N)?  ELIFECYCLE  Command failed with exit code 3221225786.
