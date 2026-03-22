@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Accordion } from 'bits-ui';
-	import { ChevronRight, Braces, FunctionSquare, Variable, Type } from '@lucide/svelte';
+	import { ChevronRight, Braces, Square, Variable, Type } from '@lucide/svelte';
 
 	interface OutlineSymbol {
 		id: string;
@@ -150,13 +150,15 @@
 
 	function iconForKind(kind: OutlineSymbol['kind']) {
 		if (kind === 'class' || kind === 'interface') return Braces;
-		if (kind === 'function') return FunctionSquare;
+		if (kind === 'function') return Square;
 		if (kind === 'type') return Type;
 		return Variable;
 	}
 
 	$effect(() => {
-		activeFilePath;
+		if (activeFilePath) {
+			// keep activeFilePath as a reactive dependency
+		}
 		refreshOutline();
 	});
 
