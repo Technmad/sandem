@@ -171,26 +171,29 @@ await actions.createFolderAtRoot("my-project");
 
 ## Troubleshooting
 
-**Projects not showing in explorer?**
+### Projects do not appear in Explorer
 
-- Check: Is `projectSync.syncProjects()` called on mount?
-- Check: Is `getWorkspaceRootFolders()` returning project IDs?
-- Check: File tree filtering logic in controller
+- Confirm `projectSync.syncProjects()` runs on mount.
+- Confirm `getWorkspaceRootFolders()` returns project IDs.
+- Verify root filtering logic in the file tree controller.
 
-**Create folder fails?**
+### Create folder action fails
 
-- Check: Is Convex mutation `createProject` working?
-- Check: Does `createProject` return a valid ID?
-- Check: Is `projectSync.syncProjects()` called after mutation?
+- Verify Convex mutation `createProject` succeeds.
+- Verify `createProject` returns a valid project ID.
+- Verify `projectSync.syncProjects()` runs after mutation.
 
-**Files not appearing in WebContainer?**
+### Files do not appear in WebContainer
 
-- Check: Does `initializeProjectFolder()` exist in mutation?
-- Check: Are files being written to correct path? (`projectId/filename`)
-- Check: WebContainer file tree permissions
+- Verify `initializeProjectFolder()` exists and is called.
+- Verify paths are written as `projectId/filename`.
+- Verify WebContainer file permissions and runtime state.
 
-**Folders exist but file tree won't refresh?**
+### Folders exist but Explorer tree does not update
 
-- Check: Is `fileTree.refresh()` being awaited?
-- Check: Is WebContainer ready before refresh?
-- Check: Are there any network/timeout errors?
+- Verify `fileTree.refresh()` is awaited where needed.
+- Verify WebContainer is ready before refresh.
+- Check for timeout/network/runtime errors.
+- As of 2026-03-22, silent polling clears stale
+  "WebContainer not ready/not initialized" errors after runtime becomes available,
+  so manual Explorer refresh should not be required for initial folder visibility.

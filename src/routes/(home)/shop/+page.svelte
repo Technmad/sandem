@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { Menubar, Accordion } from 'bits-ui';
 	import { Search, Plus } from '@lucide/svelte';
 
@@ -7,7 +6,6 @@
 	import ThemeSwitcher from '$lib/components/ui/theme/ThemeSwitcher.svelte';
 
 	import PageSection from '$lib/components/ui/layout/PageSection.svelte';
-	import RepoPaneLayout from '$lib/components/ui/workspace/RepoPaneLayout.svelte';
 
 	import AccordionItem from '$lib/components/ui/primitives/AccordionItem.svelte';
 	import Avatar from '$lib/components/ui/primitives/Avatar.svelte';
@@ -21,16 +19,6 @@
 	import SearchBar from '$lib/components/ui/inputs/SearchBar.svelte';
 	import Tabs from '$lib/components/ui/primitives/Tabs.svelte';
 
-	import ActivityBar from '$lib/components/ide/workspace/ActivityBar.svelte';
-	import Sidebar from '$lib/components/ide/workspace/Sidebar.svelte';
-	import Editor from '$lib/components/ide/panes/Editor.svelte';
-	import Terminal from '$lib/components/ide/panes/Terminal.svelte';
-	import Preview from '$lib/components/ide/panes/Preview.svelte';
-	import AppHeader from '$lib/components/ui/navigation/AppHeader.svelte';
-
-	import { activity } from '$lib/stores/activity/activityStore.svelte.js';
-	import { createPanelsState, setPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
-	import { setIDEContext } from '$lib/context/ide/ide-context.js';
 
 	let search = $state('');
 	let selectedTab = $state('overview');
@@ -43,151 +31,6 @@
 		{ id: 'ide', label: 'IDE Demo', active: selectedTab === 'ide' }
 	]);
 
-	const panels = createPanelsState();
-
-	setPanelsContext(panels);
-
-	type Entry = { name: string; directory: boolean };
-
-	let fileStore = $state<Record<string, string>>({
-		'demo/package.json': '{\n  "name": "component-showcase",\n  "scripts": { "dev": "vite" }\n}',
-		'demo/src/main.ts': 'console.log("Shop showcase loaded")',
-		'demo/src/App.svelte': '<h1>Shop route IDE preview</h1>',
-		'demo/src/app.css': ':root { color: white; background: #101012; }',
-		'demo/README.md': '# Placeholder demo project\n\nGenerated for component showcase.'
-	});
-
-	let folders = $state<Set<string>>(new Set(['.', 'demo', 'demo/src']));
-
-	function normalize(path: string) {
-		if (path === '.') return '.';
-		return path.replace(/^\.\//, '').replace(/\/+$/, '');
-	}
-
-	function collectEntries(dirPath: string): Entry[] {
-		const dir = normalize(dirPath);
-		const prefix = dir === '.' ? '' : `${dir}/`;
-		const names = new Map<string, Entry>();
-
-		for (const folder of folders) {
-			if (folder === '.' || !folder.startsWith(prefix)) continue;
-			const rest = folder.slice(prefix.length);
-			if (!rest || rest.includes('/')) continue;
-			names.set(rest, { name: rest, directory: true });
-		}
-
-		for (const filePath of Object.keys(fileStore)) {
-			if (!filePath.startsWith(prefix)) continue;
-			const rest = filePath.slice(prefix.length);
-			if (!rest) continue;
-			const first = rest.split('/')[0];
-			if (!first) continue;
-			names.set(first, {
-				name: first,
-				directory: rest.includes('/') ? true : false
-			});
-		}
-
-		return [...names.values()].sort((a, b) => {
-			if (a.directory !== b.directory) return a.directory ? -1 : 1;
-			return a.name.localeCompare(b.name);
-		});
-	}
-
-	type Listener = (port: number, url: string) => void;
-	const listeners = new Set<Listener>();
-
-	const fakeWebContainer = {
-		fs: {
-			async readdir(path: string, options?: { withFileTypes?: boolean }) {
-				const entries = collectEntries(path);
-				if (!options?.withFileTypes) {
-					return entries.map((entry) => entry.name);
-				}
-				return entries.map((entry) => ({
-					name: entry.name,
-					isDirectory: () => entry.directory
-				}));
-			},
-			async readFile(path: string) {
-				return fileStore[normalize(path)] ?? '';
-			},
-			async writeFile(path: string, content: string) {
-				fileStore = { ...fileStore, [normalize(path)]: content };
-			},
-			async mkdir(path: string, options?: { recursive?: boolean }) {
-				const target = normalize(path);
-				if (target === '.') return;
-				if (options?.recursive) {
-					const parts = target.split('/');
-					let current = '';
-					for (const part of parts) {
-						current = current ? `${current}/${part}` : part;
-						folders.add(current);
-					}
-					folders = new Set(folders);
-					return;
-				}
-				folders.add(target);
-				folders = new Set(folders);
-			}
-		},
-		on(event: string, callback: Listener) {
-			if (event === 'server-ready') listeners.add(callback);
-		},
-		async spawn(cmd: string, args?: unknown) {
-			void cmd;
-			void args;
-			const encoder = new TextEncoder();
-			const output = new ReadableStream<string>({
-				start(controller) {
-					controller.enqueue('Welcome to fake shell\r\n$ ');
-				}
-			});
-
-			const input = new WritableStream<string>({
-				write(chunk) {
-					const text = typeof chunk === 'string' ? chunk : String(chunk);
-					void encoder;
-					if (text.includes('npm run dev') || text.includes('pnpm dev')) {
-						for (const callback of listeners) callback(5173, 'https://demo.sandem.local');
-					}
-				}
-			});
-
-			return {
-				input,
-				output,
-				resize: (size: { cols: number; rows: number }) => {
-					void size;
-				},
-				kill: () => {},
-				exit: Promise.resolve(0)
-			};
-		}
-	} as unknown as import('@webcontainer/api').WebContainer;
-
-	setIDEContext({
-		getWebcontainer: () => fakeWebContainer,
-		getProject: () =>
-			({
-				files: [
-					{ name: 'src/main.ts', contents: fileStore['demo/src/main.ts'] },
-					{ name: 'src/App.svelte', contents: fileStore['demo/src/App.svelte'] },
-					{ name: 'src/app.css', contents: fileStore['demo/src/app.css'] },
-					{ name: 'README.md', contents: fileStore['demo/README.md'] }
-				],
-				room: undefined
-			}) as never,
-		getEntryPath: () => 'demo/src/main.ts'
-	});
-
-	onMount(() => {
-		activity.tab = 'search';
-		setTimeout(() => {
-			for (const callback of listeners) callback(5173, 'https://demo.sandem.local');
-		}, 250);
-	});
 </script>
 
 <div class="shop-showcase">
@@ -329,31 +172,6 @@
 			</div>
 		{/snippet}
 	</PageSection>
-
-	<PageSection heading="IDE components with fake data" variant="wide">
-		<div class="ide-shell">
-			<AppHeader />
-			<div class="ide-main">
-				<ActivityBar {panels} />
-				<div class="ide-pane">
-					<Sidebar />
-				</div>
-				<div class="ide-workbench">
-					<RepoPaneLayout>
-						{#snippet editor()}
-							<Editor />
-						{/snippet}
-						{#snippet terminal()}
-							<Terminal />
-						{/snippet}
-						{#snippet preview()}
-							<Preview />
-						{/snippet}
-					</RepoPaneLayout>
-				</div>
-			</div>
-		</div>
-	</PageSection>
 </div>
 
 <style>
@@ -401,48 +219,5 @@
 		border-radius: 0.5rem;
 		background: var(--fg);
 		color: var(--text);
-	}
-
-	.ide-shell {
-		height: 75dvh;
-		min-height: 42rem;
-		border: 1px solid var(--border);
-		border-radius: 0.65rem;
-		overflow: hidden;
-		background: var(--bg);
-		display: grid;
-		grid-template-rows: auto 1fr;
-	}
-
-	.ide-main {
-		display: grid;
-		grid-template-columns: auto minmax(15rem, 20rem) 1fr;
-		overflow: hidden;
-	}
-
-	.ide-pane {
-		border-right: 1px solid var(--border);
-		min-height: 0;
-		overflow: hidden;
-	}
-
-	.ide-workbench {
-		min-height: 0;
-		overflow: hidden;
-	}
-
-	.accordion-root {
-		display: grid;
-		gap: 0.5rem;
-	}
-
-	@media (max-width: 1100px) {
-		.ide-main {
-			grid-template-columns: auto 1fr;
-		}
-
-		.ide-pane {
-			display: none;
-		}
 	}
 </style>

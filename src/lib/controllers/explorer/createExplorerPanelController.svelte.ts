@@ -6,6 +6,7 @@ type CreateExplorerPanelControllerOptions = {
 	getWorkspaceProjects: () => WorkspaceProject[];
 	projectFolderName: (projectId: string) => string;
 	selectProject?: (projectId: string) => void;
+	onProjectSelected?: (projectId: string) => void;
 	createProject?: () => Promise<void>;
 	renameProject?: (projectId: string, title: string) => Promise<void>;
 	deleteProject?: (projectId: string) => Promise<void>;
@@ -63,6 +64,7 @@ export function createExplorerPanelController(options: CreateExplorerPanelContro
 			const projectId = projectIdByFolder.get(rootFolder);
 			if (projectId) {
 				options.selectProject?.(projectId);
+				options.onProjectSelected?.(projectId);
 			}
 		}
 

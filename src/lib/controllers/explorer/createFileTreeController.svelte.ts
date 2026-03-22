@@ -78,9 +78,14 @@ export function createFileTree(
 					lastSignature = nextSignature;
 					expanded = pruneExpandedStatePure(expanded, nextTree);
 				}
+
+				// Clear stale errors after any successful refresh, including silent polling.
+				error = null;
 			} catch (err) {
 				const message = toErrorMessage(err);
-				const isNotReady = message.includes('WebContainer not ready');
+				const isNotReady =
+					message.includes('WebContainer not ready') ||
+					message.includes('WebContainer not initialized');
 
 				if (isNotReady && isSilent) {
 					// Keep background polling quiet until runtime is available.

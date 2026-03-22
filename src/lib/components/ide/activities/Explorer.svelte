@@ -51,6 +51,9 @@
 		getWorkspaceProjects: () => ide.getWorkspaceProjects?.() ?? [],
 		projectFolderName,
 		selectProject: ide.selectProject,
+		onProjectSelected: () => {
+			projectSync.start();
+		},
 		createProject: ide.createProject,
 		renameProject: ide.commitRenameProject,
 		deleteProject: ide.confirmDeleteProject,
