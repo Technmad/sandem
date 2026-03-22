@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { activity, type TabId } from '$lib/stores/activity/activityStore.svelte.js';
-	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
-	import { createMenuController } from '$lib/controllers/workspace/index.js';
+	import { activity, type TabId } from '$lib/stores';
+	import { getPanelsContext } from '$lib/stores';
+	import { createMenuController } from '$lib/controllers';
 
 	interface Props {
 		menus: string[];

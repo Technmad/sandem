@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 
-	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
+	import { requireIDEContext } from '$lib/context';
 	import {
 		createEditorStatus,
 		createEditorRuntime,
 		createEditorLifecycle
-	} from '$lib/hooks/editor/index.js';
-	import { createAutoSaver, createFileWriter } from '$lib/services/editor/index.js';
-	import { createEditorShortcuts } from '$lib/controllers/editor/index.js';
+	} from '$lib/hooks';
+	import { createAutoSaver, createFileWriter } from '$lib/services';
+	import { createEditorShortcuts } from '$lib/controllers';
 	import {
 		getRootFolder,
 		resolveProjectFileName,
@@ -19,16 +19,16 @@
 		deriveEditorSaveStatusVariant,
 		deriveEditorTabItems,
 		shouldShowEmptyEditorState
-	} from '$lib/utils/editor/index.js';
+	} from '$lib/utils';
 	import Tabs from '$lib/components/ui/primitives/Tabs.svelte';
-	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
-	import { activity } from '$lib/stores/activity/activityStore.svelte.js';
+	import { editorStore } from '$lib/stores';
+	import { activity } from '$lib/stores';
 	import EmptyEditorState from '$lib/components/ui/editor/Empty.svelte';
 	import EditorBreadcrumb from '$lib/components/ui/editor/Breadcrumbs.svelte';
 	import EditorSaveStatus from '$lib/components/ui/editor/SaveStatus.svelte';
 	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
-	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
-	import { collaborationPermissionsStore } from '$lib/stores/collaboration/collaborationStore.svelte.js';
+	import { getPanelsContext } from '$lib/stores';
+	import { collaborationPermissionsStore } from '$lib/stores';
 
 	const ide = requireIDEContext();
 	const panels = getPanelsContext();

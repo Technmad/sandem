@@ -1,6 +1,6 @@
 import { api } from '$convex/_generated/api.js';
 import { createError } from '$lib/sveltekit/index.js';
-import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
+import { editorStore } from '$lib/stores';
 import { VITE_REACT_TEMPLATE } from '$lib/utils/project/template.js';
 import { uniqueProjects } from '$lib/utils/project/projects.js';
 import type { ProjectId } from '$types/projects.js';

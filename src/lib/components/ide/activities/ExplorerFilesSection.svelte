@@ -3,7 +3,7 @@
 	import { Accordion } from 'bits-ui';
 
 	import type { FileNode } from '$types/editor';
-	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
+	import { editorStore } from '$lib/stores';
 	import FileTreeView from '$lib/components/ui/editor/FileTreeView.svelte';
 
 	interface Props {

@@ -1,24 +1,24 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
-	import { PaneGroup, Pane } from 'paneforge';
-	import type { PaneAPI } from 'paneforge';
+	import { onMount, untrack, type Snippet } from 'svelte';
+
 	import { useConvexClient, useQuery } from 'convex-svelte';
 	import { api } from '$convex/_generated/api.js';
 
+	import { PaneGroup, Pane, type PaneAPI } from 'paneforge';
+
 	import { createSvelteAuthClient, useAuth } from '$lib/svelte/index.js';
 	import { createError } from '$lib/sveltekit/index.js';
-	import { authClient } from '$lib/context/auth/auth-client.js';
-	import { setIDEContext } from '$lib/context/ide/ide-context.js';
-	import { createRepoController } from '$lib/controllers/workspace/index.js';
-	import { createPanelsState, setPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
+
+	import { authClient } from '$lib/context';
+	import { setIDEContext } from '$lib/context';
+	import { createRepoController } from '$lib/controllers';
+	import { createPanelsState, setPanelsContext } from '$lib/stores';
 
 	import type { RepoLayoutData } from '$types/routes.js';
-	import type { Snippet } from 'svelte';
 
-	import Activitybar from '$lib/components/ide/workspace/ActivityBar.svelte';
-	import Sidebar from '$lib/components/ide/workspace/Sidebar.svelte';
-	import Statusbar from '$lib/components/ide/workspace/Statusbar.svelte';
-	import Resizer from '$lib/components/ui/workspace/Resizer.svelte';
+	import { ActivityBar, Sidebar, Statusbar } from '$lib/components/ide/workspace';
+	import { Resizer } from '$lib/components/ui/workspace';
+	
 	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
 
 	let { children, data }: { children: Snippet; data: RepoLayoutData } = $props();
@@ -136,7 +136,7 @@
 
 <div class="container">
 	<main class="repo-layout">
-		<Activitybar {panels} />
+		<ActivityBar {panels} />
 
 		<section class="workspace-shell">
 			<PaneGroup direction="horizontal">

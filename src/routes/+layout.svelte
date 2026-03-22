@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	// Load global app styles once at the root layout level.
+
 	import '../app.css';
-	// Use the bundled favicon for all routes.
 	import favicon from '$lib/assets/favicon.svg';
 
-	// Read the Convex deployment URL from public environment variables.
 	import { PUBLIC_CONVEX_URL } from '$env/static/public';
-	// Initialize Convex client integration for Svelte.
+
+	// Initialize Convex client
 	import { setupConvex } from 'convex-svelte';
 	import { createError, createErrorReporter, formatError, toError } from '$lib/sveltekit/index.js';
 
 	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
-
 	import AppHeader from '$lib/components/ui/navigation/AppHeader.svelte';
 
 	let bootstrapError = $state<string | null>(null);
@@ -56,16 +54,14 @@
 		};
 	});
 
-	// Receive route content from child layouts/pages.
 	let { children } = $props();
 </script>
 
 <svelte:head>
-	<!-- Set the browser tab icon globally. -->
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<!-- Render the active child route tree. -->
+<!-- html -->
 
 <div class="container">
 	<AppHeader />
@@ -81,6 +77,8 @@
 		{@render children()}
 	{/if}
 </div>
+
+<!-- /html -->
 
 <style>
 	.container {

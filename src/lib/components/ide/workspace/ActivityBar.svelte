@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { Settings } from '@lucide/svelte';
 	import { onMount } from 'svelte';
-	import { activity, tools, type TabId } from '$lib/stores/activity/activityStore.svelte.js';
-	import type { IDEPanels } from '$lib/stores/panel/panelStore.svelte.js';
+	import { activity, tools, type TabId } from '$lib/stores';
+	import type { IDEPanels } from '$lib/stores';
 	import Button from '$lib/components/ui/primitives/Button.svelte';
-	import { createActivityBarController } from '$lib/controllers/activity/index.js';
+	import { createActivityBarController } from '$lib/controllers';
 
 	interface Props {
 		panels: IDEPanels;

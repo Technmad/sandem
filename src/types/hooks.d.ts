@@ -1,6 +1,6 @@
 import type { WebContainer } from '@webcontainer/api';
 import type * as Monaco from 'monaco-editor';
-import type { TabId } from '$lib/stores/activity/activityStore.svelte.js';
+import type { TabId } from '$lib/stores';
 import type { IDEProject } from '$types/projects.js';
 import type {
 	FileNode,

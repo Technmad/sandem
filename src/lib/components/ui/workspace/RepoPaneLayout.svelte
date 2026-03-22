@@ -2,7 +2,7 @@
 	import { untrack, type Snippet } from 'svelte';
 	import { PaneGroup, Pane, PaneResizer } from 'paneforge';
 	import type { PaneAPI } from 'paneforge';
-	import { requirePanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
+	import { requirePanelsContext } from '$lib/stores';
 
 	let {
 		editor,

@@ -15,7 +15,7 @@
 	import CommandPalette from '$lib/components/ui/workspace/CommandPalette.svelte';
 	import PanelControls from '$lib/components/ui/workspace/PanelControls.svelte';
 	import WindowControls from '$lib/components/ui/workspace/WindowControls.svelte';
-	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
+	import { getPanelsContext } from '$lib/stores';
 
 	const links = [
 		{ path: '/repo', label: 'repo' },

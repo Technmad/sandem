@@ -2,7 +2,7 @@
 	import { ChevronRight } from '@lucide/svelte';
 	import { Accordion } from 'bits-ui';
 
-	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
+	import { editorStore } from '$lib/stores';
 	import Button from '$lib/components/ui/primitives/Button.svelte';
 
 	// Only render if there are open tabs

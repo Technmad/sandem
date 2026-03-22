@@ -3,10 +3,10 @@
 	import ActivityPanel from './ActivityPanel.svelte';
 	import Button from '$lib/components/ui/primitives/Button.svelte';
 	import { Accordion } from 'bits-ui';
-	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
-	import { createDebugActivity } from '$lib/controllers/activity/index.js';
-	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
-	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
+	import { requireIDEContext } from '$lib/context';
+	import { createDebugActivity } from '$lib/controllers';
+	import { editorStore } from '$lib/stores';
+	import { getPanelsContext } from '$lib/stores';
 
 	const ide = requireIDEContext();
 	const debugSections = ['VARIABLES', 'WATCH', 'CALL STACK', 'BREAKPOINTS'];

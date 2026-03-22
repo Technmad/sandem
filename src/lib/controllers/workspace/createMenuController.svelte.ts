@@ -1,4 +1,4 @@
-import type { TabId } from '$lib/stores/activity/activityStore.svelte.js';
+import type { TabId } from '$lib/stores';
 import type { MenuAction, MenuCommand } from '$types/commands.js';
 
 type Options = {

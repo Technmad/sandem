@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { CloudLightning, Check, X, Bell, User, GitBranch } from '@lucide/svelte';
 	import { onDestroy } from 'svelte';
-	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
-	import { activity } from '$lib/stores/activity/activityStore.svelte.js';
-	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
+	import { editorStore } from '$lib/stores';
+	import { activity } from '$lib/stores';
+	import { getPanelsContext } from '$lib/stores';
 	import {
 		collaborationPresenceStore,
 		collaborationPermissionsStore,
 		type CollaborationPresence
-	} from '$lib/stores/collaboration/collaborationStore.svelte.js';
+	} from '$lib/stores';
 
 	interface Props {
 		status: string;

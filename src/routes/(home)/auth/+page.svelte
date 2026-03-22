@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { authClient } from '$lib/context/auth/auth-client.js';
+	import { authClient } from '$lib/context';
 	import { api } from '$convex/_generated/api.js';
 	import { useQuery } from 'convex-svelte';
 	import { useAuth } from '$lib/svelte/index.js';

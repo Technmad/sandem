@@ -1,4 +1,4 @@
-import type { TabId } from '$lib/stores/activity/activityStore.svelte.js';
+import type { TabId } from '$lib/stores';
 import type { CreateActivityBarControllerOptions } from '../../../types/hooks.js';
 
 const LETTER_SHORTCUTS = {

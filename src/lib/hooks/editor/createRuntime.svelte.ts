@@ -11,7 +11,7 @@ import {
 	createModelForPath,
 	createMonacoInstance,
 	MONACO_OPTIONS
-} from '$lib/services/editor/index.js';
+} from '$lib/services';
 
 export function createEditorRuntime(deps: EditorRuntimeDependencies) {
 	let editor: Monaco.editor.IStandaloneCodeEditor | undefined;

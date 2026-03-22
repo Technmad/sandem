@@ -3,7 +3,7 @@
 	 * SSR Auth Layout - uses getServerState for SSR authentication
 	 */
 	import { createSvelteAuthClient } from '$lib/svelte/index.js';
-	import { authClient } from '$lib/context/auth/auth-client.js';
+	import { authClient } from '$lib/context';
 	import type { AuthLayoutData } from '../../../../types/routes.js';
 	import type { Snippet } from 'svelte';
 

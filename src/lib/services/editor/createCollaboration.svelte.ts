@@ -13,7 +13,7 @@ import {
 	setCollaborationPermissions,
 	setCollaborationPresence,
 	type CollaborationRole
-} from '$lib/stores/collaboration/collaborationStore.svelte.js';
+} from '$lib/stores';
 
 type SetupCollaborationOptions = {
 	project: IDEProject;

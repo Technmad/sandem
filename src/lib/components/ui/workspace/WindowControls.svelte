@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Minus, Maximize2, X } from '@lucide/svelte';
-	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
+	import { getPanelsContext } from '$lib/stores';
 
 	const panels = getPanelsContext();
 

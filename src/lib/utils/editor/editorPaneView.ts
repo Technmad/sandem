@@ -1,4 +1,4 @@
-import type { EditorTab } from '$lib/stores/editor/editorStore.svelte.js';
+import type { EditorTab } from '$lib/stores';
 import type { QuickAction } from '$types/editor.js';
 
 export type SaveStatusVariant = '' | 'saved' | 'saving' | 'error';

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
-	import { createPreview } from '$lib/hooks/runtime/index.js';
+	import { requireIDEContext } from '$lib/context';
+	import { createPreview } from '$lib/hooks';
 	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
 	import { createErrorReporter } from '$lib/sveltekit/index.js';
 

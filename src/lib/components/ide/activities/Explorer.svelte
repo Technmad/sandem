@@ -11,17 +11,17 @@
 	} from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
-	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
-	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
-	import { activity } from '$lib/stores/activity/activityStore.svelte.js';
+	import { requireIDEContext } from '$lib/context';
+	import { editorStore } from '$lib/stores';
+	import { activity } from '$lib/stores';
 	import { projectFolderName } from '$lib/utils/project/projects.js';
 	import { findNodeByPath } from '$lib/utils/editor/fileTreeOps.js';
 	import { filterNodesByQuery, getPathsToExpand } from '$lib/utils/editor/explorerTreeOps.js';
 	import type { FileNode } from '$types/editor';
 	import type { IDEProject } from '$types/projects';
 
-	import { createFileTree } from '$lib/controllers/explorer/index.js';
-	import { createProjectFilesSync } from '$lib/services/explorer/index.js';
+	import { createFileTree } from '$lib/controllers';
+	import { createProjectFilesSync } from '$lib/services';
 	import { createExplorerStateController } from '$lib/controllers/explorer/createExplorerStateController.svelte.js';
 	import {
 		handleCreateFile,

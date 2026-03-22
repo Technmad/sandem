@@ -6,13 +6,13 @@
 		Terminal
 	} from '@battlefieldduck/xterm-svelte';
 	import { onDestroy } from 'svelte';
-	import { createShellProcess } from '$lib/services/runtime/index.js';
+	import { createShellProcess } from '$lib/services';
 	import { createErrorReporter } from '$lib/sveltekit/index.js';
-	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
+	import { requireIDEContext } from '$lib/context';
 	import {
 		appendTerminalAudit,
 		collaborationPermissionsStore
-	} from '$lib/stores/collaboration/collaborationStore.svelte.js';
+	} from '$lib/stores';
 	import Tabs from '$lib/components/ui/primitives/Tabs.svelte';
 	import ErrorPanel from '$lib/components/ui/primitives/ErrorPanel.svelte';
 	import Button from '$lib/components/ui/primitives/Button.svelte';
@@ -26,7 +26,7 @@
 		ChevronDown,
 		ChevronUp
 	} from '@lucide/svelte';
-	import { getPanelsContext } from '$lib/stores/panel/panelStore.svelte.js';
+	import { getPanelsContext } from '$lib/stores';
 
 	const ide = requireIDEContext();
 	let terminalInstance: Terminal | undefined = $state(undefined);

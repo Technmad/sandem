@@ -7,7 +7,7 @@ import { getLiveblocksClient } from '$lib/liveblocks.config.js';
 import {
 	appendTerminalAudit,
 	collaborationPermissionsStore
-} from '$lib/stores/collaboration/collaborationStore.svelte.js';
+} from '$lib/stores';
 
 type MutableProject = { files: ProjectFile[] };
 type FsEvent = Extract<Liveblocks['RoomEvent'], { type: 'fs-op' }>;

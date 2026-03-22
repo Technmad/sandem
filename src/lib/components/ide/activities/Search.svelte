@@ -3,9 +3,9 @@
 	import ActivityPanel from './ActivityPanel.svelte';
 	import Button from '$lib/components/ui/primitives/Button.svelte';
 	import SearchBar from '$lib/components/ui/inputs/SearchBar.svelte';
-	import { requireIDEContext } from '$lib/context/ide/ide-context.js';
-	import { createSearchActivity } from '$lib/controllers/activity/index.js';
-	import { editorStore } from '$lib/stores/editor/editorStore.svelte.js';
+	import { requireIDEContext } from '$lib/context';
+	import { createSearchActivity } from '$lib/controllers';
+	import { editorStore } from '$lib/stores';
 
 	const ide = requireIDEContext();
 	const search = createSearchActivity({

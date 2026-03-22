@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { activity, type TabId } from '$lib/stores/activity/activityStore.svelte.js';
+	import { activity, type TabId } from '$lib/stores';
 
 	import Explorer from '../activities/Explorer.svelte';
 	import SearchPanel from '../activities/Search.svelte';
